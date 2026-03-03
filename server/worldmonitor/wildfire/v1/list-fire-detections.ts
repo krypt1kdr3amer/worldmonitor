@@ -14,7 +14,7 @@ import type {
   FireConfidence,
 } from '../../../../src/generated/server/worldmonitor/wildfire/v1/service_server';
 
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 import { cachedFetchJson } from '../../../_shared/redis';
 
 const REDIS_CACHE_KEY = 'wildfire:fires:v1';
@@ -104,7 +104,7 @@ export const listFireDetections: WildfireServiceHandler['listFireDetections'] = 
           entries.map(async ([regionName, bbox]) => {
             const url = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${apiKey}/${FIRMS_SOURCE}/${bbox}/1`;
             const res = await fetch(url, {
-              headers: { Accept: 'text/csv', 'User-Agent': CHROME_UA },
+              headers: { Accept: 'text/csv', ...STANDARD_HEADERS },
               signal: AbortSignal.timeout(15_000),
             });
             if (!res.ok) {

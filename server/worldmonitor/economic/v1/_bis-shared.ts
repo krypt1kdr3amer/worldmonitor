@@ -3,7 +3,7 @@
  * Used by all 3 BIS RPC handlers.
  */
 
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 import Papa from 'papaparse';
 
 const BIS_BASE = 'https://stats.bis.org/api/v1/data';
@@ -34,7 +34,7 @@ export async function fetchBisCSV(dataset: string, key: string, timeout = 12000)
   const id = setTimeout(() => controller.abort(), timeout);
   try {
     const res = await fetch(url, {
-      headers: { 'User-Agent': CHROME_UA, Accept: 'text/csv' },
+      headers: { ...STANDARD_HEADERS, Accept: 'text/csv' },
       signal: controller.signal,
     });
     if (!res.ok) throw new Error(`BIS HTTP ${res.status}`);

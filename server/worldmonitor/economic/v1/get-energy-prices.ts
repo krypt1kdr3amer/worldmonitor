@@ -9,7 +9,7 @@ import type {
   EnergyPrice,
 } from '../../../../src/generated/server/worldmonitor/economic/v1/service_server';
 
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 import { cachedFetchJson } from '../../../_shared/redis';
 
 const REDIS_CACHE_KEY = 'economic:energy:v1';
@@ -56,7 +56,7 @@ async function fetchEiaSeries(
     });
 
     const response = await fetch(`https://api.eia.gov${config.apiPath}?${params}`, {
-      headers: { Accept: 'application/json', 'User-Agent': CHROME_UA },
+      headers: { Accept: 'application/json', ...STANDARD_HEADERS },
       signal: AbortSignal.timeout(10000),
     });
 

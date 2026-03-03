@@ -15,7 +15,7 @@ import type {
   PredictionMarket,
 } from '../../../../src/generated/server/worldmonitor/prediction/v1/service_server';
 
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 import { cachedFetchJson } from '../../../_shared/redis';
 
 const REDIS_CACHE_KEY = 'prediction:markets:v1';
@@ -128,7 +128,7 @@ export const listPredictionMarkets: PredictionServiceHandler['listPredictionMark
         const response = await fetch(
           `${GAMMA_BASE}/${endpoint}?${params}`,
           {
-            headers: { Accept: 'application/json', 'User-Agent': CHROME_UA },
+            headers: { Accept: 'application/json', ...STANDARD_HEADERS },
             signal: AbortSignal.timeout(FETCH_TIMEOUT),
           },
         );

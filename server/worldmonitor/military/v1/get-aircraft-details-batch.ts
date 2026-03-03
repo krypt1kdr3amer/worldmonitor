@@ -6,7 +6,7 @@ import type {
 } from '../../../../src/generated/server/worldmonitor/military/v1/service_server';
 
 import { mapWingbitsDetails } from './_shared';
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 import { getCachedJsonBatch, cachedFetchJson } from '../../../_shared/redis';
 
 interface CachedAircraftDetails {
@@ -61,7 +61,7 @@ export async function getAircraftDetailsBatch(
         async () => {
           try {
             const resp = await fetch(`https://customer-api.wingbits.com/v1/flights/details/${icao24}`, {
-              headers: { 'x-api-key': apiKey, Accept: 'application/json', 'User-Agent': CHROME_UA },
+              headers: { 'x-api-key': apiKey, Accept: 'application/json', ...STANDARD_HEADERS },
               signal: AbortSignal.timeout(10_000),
             });
             if (resp.status === 404) {

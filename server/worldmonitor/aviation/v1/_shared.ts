@@ -12,7 +12,7 @@ import {
   FAA_AIRPORTS,
   DELAY_SEVERITY_THRESHOLDS,
 } from '../../../../src/config/airports';
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 
 // ---------- Constants ----------
 
@@ -246,7 +246,7 @@ async function fetchSingleAirport(
   try {
     const url = `${AVIATIONSTACK_URL}?access_key=${apiKey}&dep_iata=${airport.iata}&limit=100`;
     const resp = await fetch(url, {
-      headers: { 'User-Agent': CHROME_UA },
+      headers: { ...STANDARD_HEADERS },
       signal: AbortSignal.timeout(5_000),
     });
     if (!resp.ok) {
@@ -360,7 +360,7 @@ function getRelayBaseUrl(): string | null {
 }
 
 function getRelayHeaders(): Record<string, string> {
-  const headers: Record<string, string> = { 'User-Agent': CHROME_UA };
+  const headers: Record<string, string> = { ...STANDARD_HEADERS };
   const relaySecret = process.env.RELAY_SHARED_SECRET;
   if (relaySecret) {
     const relayHeader = (process.env.RELAY_AUTH_HEADER || 'x-relay-key').toLowerCase();
@@ -408,7 +408,7 @@ export async function fetchNotamClosures(
       console.log(`[Aviation] NOTAM: fetching direct for ${icaoCodes.length} airports`);
       const url = `${ICAO_NOTAM_URL}?api_key=${apiKey}&format=json&locations=${locations}`;
       const resp = await fetch(url, {
-        headers: { 'User-Agent': CHROME_UA },
+        headers: { ...STANDARD_HEADERS },
         signal: AbortSignal.timeout(20_000),
       });
       if (!resp.ok) {

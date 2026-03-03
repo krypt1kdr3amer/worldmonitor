@@ -17,7 +17,7 @@ import type {
   ClimateAnomaly,
 } from '../../../../src/generated/server/worldmonitor/climate/v1/service_server';
 
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 import { cachedFetchJson } from '../../../_shared/redis';
 
 const REDIS_CACHE_KEY = 'climate:anomalies:v1';
@@ -91,7 +91,7 @@ async function fetchZone(
 ): Promise<ClimateAnomaly | null> {
   const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${zone.lat}&longitude=${zone.lon}&start_date=${startDate}&end_date=${endDate}&daily=temperature_2m_mean,precipitation_sum&timezone=UTC`;
 
-  const response = await fetch(url, { headers: { 'User-Agent': CHROME_UA }, signal: AbortSignal.timeout(20_000) });
+  const response = await fetch(url, { headers: { ...STANDARD_HEADERS }, signal: AbortSignal.timeout(20_000) });
   if (!response.ok) {
     throw new Error(`Open-Meteo ${response.status} for ${zone.name}`);
   }

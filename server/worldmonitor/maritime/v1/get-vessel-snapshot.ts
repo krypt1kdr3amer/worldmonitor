@@ -9,7 +9,7 @@ import type {
   AisDisruptionSeverity,
 } from '../../../../src/generated/server/worldmonitor/maritime/v1/service_server';
 
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 
 // ========================================================================
 // Helpers
@@ -27,7 +27,7 @@ function getRelayBaseUrl(): string | null {
 function getRelayRequestHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     Accept: 'application/json',
-    'User-Agent': CHROME_UA,
+    ...STANDARD_HEADERS,
   };
   const relaySecret = process.env.RELAY_SHARED_SECRET;
   if (relaySecret) {

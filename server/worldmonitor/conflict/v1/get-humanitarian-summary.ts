@@ -13,7 +13,7 @@ import type {
   HumanitarianCountrySummary,
 } from '../../../../src/generated/server/worldmonitor/conflict/v1/service_server';
 
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 import { cachedFetchJson } from '../../../_shared/redis';
 
 const REDIS_CACHE_KEY = 'conflict:humanitarian:v1';
@@ -55,7 +55,7 @@ async function fetchHapiSummary(countryCode: string): Promise<HumanitarianCountr
     }
 
     const response = await fetch(url, {
-      headers: { Accept: 'application/json', 'User-Agent': CHROME_UA },
+      headers: { Accept: 'application/json', ...STANDARD_HEADERS },
       signal: AbortSignal.timeout(15000),
     });
 

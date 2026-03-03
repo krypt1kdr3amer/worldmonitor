@@ -19,7 +19,7 @@ import type {
   TechEventCoords,
 } from '../../../../src/generated/server/worldmonitor/research/v1/service_server';
 import { CITY_COORDS } from '../../../../api/data/city-coords';
-import { CHROME_UA, clampInt } from '../../../_shared/constants';
+import { STANDARD_HEADERS, clampInt } from '../../../_shared/constants';
 import { cachedFetchJson } from '../../../_shared/redis';
 
 const REDIS_CACHE_KEY = 'research:tech-events:v1';
@@ -262,10 +262,10 @@ async function fetchTechEvents(req: ListTechEventsRequest): Promise<ListTechEven
   // Fetch both sources in parallel
   const [icsResponse, rssResponse] = await Promise.allSettled([
     fetch(ICS_URL, {
-      headers: { 'User-Agent': CHROME_UA },
+      headers: { ...STANDARD_HEADERS },
     }),
     fetch(DEV_EVENTS_RSS, {
-      headers: { 'User-Agent': CHROME_UA },
+      headers: { ...STANDARD_HEADERS },
     }),
   ]);
 

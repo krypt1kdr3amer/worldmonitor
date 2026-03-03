@@ -14,7 +14,7 @@ import {
   UPSTREAM_TIMEOUT_MS,
   type RawFlight,
 } from './_shared';
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 
 const CACHE_KEY = 'theater-posture:sebuf:v1';
 const STALE_CACHE_KEY = 'theater-posture:sebuf:stale:v1';
@@ -35,7 +35,7 @@ let wingbitsBackoffUntil = 0;
 function getRelayRequestHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     Accept: 'application/json',
-    'User-Agent': CHROME_UA,
+    ...STANDARD_HEADERS,
   };
   const relaySecret = process.env.RELAY_SHARED_SECRET;
   if (relaySecret) {
@@ -129,7 +129,7 @@ async function fetchMilitaryFlightsFromWingbits(): Promise<RawFlight[] | null> {
   try {
     const resp = await fetch('https://customer-api.wingbits.com/v1/flights', {
       method: 'POST',
-      headers: { 'x-api-key': apiKey, Accept: 'application/json', 'Content-Type': 'application/json', 'User-Agent': CHROME_UA },
+      headers: { 'x-api-key': apiKey, Accept: 'application/json', 'Content-Type': 'application/json', ...STANDARD_HEADERS },
       body: JSON.stringify(areas),
       signal: AbortSignal.timeout(15_000),
     });

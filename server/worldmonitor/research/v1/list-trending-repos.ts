@@ -12,7 +12,7 @@ import type {
   GithubRepo,
 } from '../../../../src/generated/server/worldmonitor/research/v1/service_server';
 
-import { CHROME_UA, clampInt } from '../../../_shared/constants';
+import { STANDARD_HEADERS, clampInt } from '../../../_shared/constants';
 import { cachedFetchJson } from '../../../_shared/redis';
 
 const REDIS_CACHE_KEY = 'research:trending:v1';
@@ -31,7 +31,7 @@ async function fetchTrendingRepos(req: ListTrendingReposRequest): Promise<Github
 
   try {
     const response = await fetch(primaryUrl, {
-      headers: { Accept: 'application/json', 'User-Agent': CHROME_UA },
+      headers: { Accept: 'application/json', ...STANDARD_HEADERS },
       signal: AbortSignal.timeout(10000),
     });
 
@@ -42,7 +42,7 @@ async function fetchTrendingRepos(req: ListTrendingReposRequest): Promise<Github
     try {
       const fallbackUrl = `https://gh-trending-api.herokuapp.com/repositories/${language}?since=${period}`;
       const fallbackResponse = await fetch(fallbackUrl, {
-        headers: { Accept: 'application/json', 'User-Agent': CHROME_UA },
+        headers: { Accept: 'application/json', ...STANDARD_HEADERS },
         signal: AbortSignal.timeout(10000),
       });
 

@@ -2,7 +2,7 @@
  * Shared helpers for the trade domain RPCs.
  * WTO Timeseries API integration.
  */
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 
 /** WTO Timeseries API base URL. */
 export const WTO_API_BASE = 'https://api.wto.org/timeseries/v1';
@@ -64,7 +64,7 @@ export async function wtoFetch(
     const res = await fetch(url.toString(), {
       headers: {
         'Ocp-Apim-Subscription-Key': apiKey,
-        'User-Agent': CHROME_UA,
+        ...STANDARD_HEADERS,
       },
       signal: AbortSignal.timeout(15000),
     });

@@ -7,7 +7,7 @@ import type {
 } from '../../../../src/generated/server/worldmonitor/supply_chain/v1/service_server';
 
 import { cachedFetchJson } from '../../../_shared/redis';
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 // @ts-expect-error — .mjs module, no declaration file
 import { detectSpike } from './_scoring.mjs';
 
@@ -42,7 +42,7 @@ async function fetchFredSeries(cfg: FredSeriesConfig): Promise<ShippingIndex | n
     });
 
     const response = await fetch(`${FRED_API_BASE}/series/observations?${params}`, {
-      headers: { Accept: 'application/json', 'User-Agent': CHROME_UA },
+      headers: { Accept: 'application/json', ...STANDARD_HEADERS },
       signal: AbortSignal.timeout(10000),
     });
 

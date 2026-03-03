@@ -12,7 +12,7 @@ import type {
   GeoCoordinates,
 } from '../../../../src/generated/server/worldmonitor/displacement/v1/service_server';
 
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 import { cachedFetchJson } from '../../../_shared/redis';
 
 const REDIS_CACHE_KEY = 'displacement:summary:v1';
@@ -57,7 +57,7 @@ async function fetchUnhcrYearItems(year: number): Promise<UnhcrRawItem[] | null>
   for (let page = 1; page <= maxPageGuard; page++) {
     const response = await fetch(
       `https://api.unhcr.org/population/v1/population/?year=${year}&limit=${limit}&page=${page}&coo_all=true&coa_all=true`,
-      { headers: { Accept: 'application/json', 'User-Agent': CHROME_UA }, signal: AbortSignal.timeout(10_000) },
+      { headers: { Accept: 'application/json', ...STANDARD_HEADERS }, signal: AbortSignal.timeout(10_000) },
     );
 
     if (!response.ok) return null;

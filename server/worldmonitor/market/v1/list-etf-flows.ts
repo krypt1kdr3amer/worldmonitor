@@ -10,7 +10,7 @@ import type {
   EtfFlow,
 } from '../../../../src/generated/server/worldmonitor/market/v1/service_server';
 import { UPSTREAM_TIMEOUT_MS, type YahooChartResponse } from './_shared';
-import { CHROME_UA, yahooGate } from '../../../_shared/constants';
+import { STANDARD_HEADERS, yahooGate } from '../../../_shared/constants';
 import { cachedFetchJson } from '../../../_shared/redis';
 
 // ========================================================================
@@ -47,7 +47,7 @@ async function fetchEtfChart(ticker: string): Promise<YahooChartResponse | null>
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?range=5d&interval=1d`;
     const resp = await fetch(url, {
       headers: {
-        'User-Agent': CHROME_UA,
+        ...STANDARD_HEADERS,
       },
       signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });

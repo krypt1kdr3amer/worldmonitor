@@ -30,7 +30,7 @@ export async function getCachedJson(key: string, raw = false): Promise<unknown |
   try {
     const finalKey = raw ? key : prefixKey(key);
     const resp = await fetch(`${url}/get/${encodeURIComponent(finalKey)}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}`, 'Accept-Encoding': 'gzip, deflate, br' },
       signal: AbortSignal.timeout(REDIS_OP_TIMEOUT_MS),
     });
     if (!resp.ok) return null;
@@ -50,7 +50,7 @@ export async function setCachedJson(key: string, value: unknown, ttlSeconds: num
     // Atomic SET with EX — single call avoids race between SET and EXPIRE (C-3 fix)
     await fetch(`${url}/set/${encodeURIComponent(prefixKey(key))}/${encodeURIComponent(JSON.stringify(value))}/EX/${ttlSeconds}`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}`, 'Accept-Encoding': 'gzip, deflate, br' },
       signal: AbortSignal.timeout(REDIS_OP_TIMEOUT_MS),
     });
   } catch (err) {
@@ -76,7 +76,7 @@ export async function getCachedJsonBatch(keys: string[]): Promise<Map<string, un
     const pipeline = keys.map((k) => ['GET', prefixKey(k)]);
     const resp = await fetch(`${url}/pipeline`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept-Encoding': 'gzip, deflate, br' },
       body: JSON.stringify(pipeline),
       signal: AbortSignal.timeout(REDIS_PIPELINE_TIMEOUT_MS),
     });
@@ -207,7 +207,7 @@ export async function geoSearchByBox(
     ];
     const resp = await fetch(`${url}/pipeline`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept-Encoding': 'gzip, deflate, br' },
       body: JSON.stringify(pipeline),
       signal: AbortSignal.timeout(REDIS_PIPELINE_TIMEOUT_MS),
     });
@@ -233,7 +233,7 @@ export async function getHashFieldsBatch(
     const pipeline = [['HMGET', finalKey, ...fields]];
     const resp = await fetch(`${url}/pipeline`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept-Encoding': 'gzip, deflate, br' },
       body: JSON.stringify(pipeline),
       signal: AbortSignal.timeout(REDIS_PIPELINE_TIMEOUT_MS),
     });

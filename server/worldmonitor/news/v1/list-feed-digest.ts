@@ -7,7 +7,7 @@ import type {
   ThreatLevel as ProtoThreatLevel,
 } from '../../../../src/generated/server/worldmonitor/news/v1/service_server';
 import { cachedFetchJson } from '../../../_shared/redis';
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 import { VARIANT_FEEDS, INTEL_SOURCES, type ServerFeed } from './_feeds';
 import { classifyByKeyword, type ThreatLevel } from './_classifier';
 
@@ -21,7 +21,7 @@ function getRelayBaseUrl(): string | null {
 
 function getRelayHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
-    'User-Agent': CHROME_UA,
+    ...STANDARD_HEADERS,
     Accept: 'application/rss+xml, application/xml, text/xml, */*',
   };
   const relaySecret = process.env.RELAY_SHARED_SECRET;
@@ -72,7 +72,7 @@ async function fetchRssText(
   try {
     const resp = await fetch(url, {
       headers: {
-        'User-Agent': CHROME_UA,
+        ...STANDARD_HEADERS,
         'Accept': 'application/rss+xml, application/xml, text/xml, */*',
         'Accept-Language': 'en-US,en;q=0.9',
       },

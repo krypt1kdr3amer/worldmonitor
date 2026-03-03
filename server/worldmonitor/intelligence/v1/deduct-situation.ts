@@ -6,7 +6,7 @@ import type {
 
 import { cachedFetchJson } from '../../../_shared/redis';
 import { hashString } from './_shared';
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 
 const DEDUCT_TIMEOUT_MS = 120_000;
 const DEDUCT_CACHE_TTL = 3600;
@@ -58,7 +58,7 @@ Your task is to DEDUCT the situation in a near timeline (e.g. 24 hours to a few 
                     headers: {
                         Authorization: `Bearer ${apiKey}`,
                         'Content-Type': 'application/json',
-                        'User-Agent': CHROME_UA
+                        ...STANDARD_HEADERS
                     },
                     body: JSON.stringify({
                         model,

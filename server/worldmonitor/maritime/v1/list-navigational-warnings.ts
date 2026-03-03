@@ -5,7 +5,7 @@ import type {
   NavigationalWarning,
 } from '../../../../src/generated/server/worldmonitor/maritime/v1/service_server';
 
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 import { cachedFetchJson } from '../../../_shared/redis';
 
 const REDIS_CACHE_KEY = 'maritime:navwarnings:v1';
@@ -37,7 +37,7 @@ function parseNgaDate(dateStr: unknown): number {
 async function fetchNgaWarnings(area?: string): Promise<NavigationalWarning[]> {
   try {
     const response = await fetch(NGA_WARNINGS_URL, {
-      headers: { Accept: 'application/json', 'User-Agent': CHROME_UA },
+      headers: { Accept: 'application/json', ...STANDARD_HEADERS },
       signal: AbortSignal.timeout(15000),
     });
 

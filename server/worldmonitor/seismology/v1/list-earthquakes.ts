@@ -13,7 +13,7 @@ import type {
 } from '../../../../src/generated/server/worldmonitor/seismology/v1/service_server';
 
 import { cachedFetchJson } from '../../../_shared/redis';
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 
 const USGS_FEED_URL =
   'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson';
@@ -30,7 +30,7 @@ export const listEarthquakes: SeismologyServiceHandler['listEarthquakes'] = asyn
   // Cache stores full set, slice on read — avoids polluting cache with partial results
   const cached = await cachedFetchJson<{ earthquakes: ListEarthquakesResponse['earthquakes'] }>(CACHE_KEY, CACHE_TTL, async () => {
     const response = await fetch(USGS_FEED_URL, {
-      headers: { Accept: 'application/json', 'User-Agent': CHROME_UA },
+      headers: { Accept: 'application/json', ...STANDARD_HEADERS },
       signal: AbortSignal.timeout(10_000),
     });
 

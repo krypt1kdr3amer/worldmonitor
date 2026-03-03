@@ -21,7 +21,7 @@ import {
   deduplicateEvents,
   sortBySeverityAndRecency,
 } from './_shared';
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 import { cachedFetchJson } from '../../../_shared/redis';
 import { fetchAcledCached } from '../../../_shared/acled';
 
@@ -92,7 +92,7 @@ async function fetchGdeltEvents(): Promise<UnrestEvent[]> {
     });
 
     const response = await fetch(`${GDELT_GEO_URL}?${params}`, {
-      headers: { Accept: 'application/json', 'User-Agent': CHROME_UA },
+      headers: { Accept: 'application/json', ...STANDARD_HEADERS },
       signal: AbortSignal.timeout(10000),
     });
 

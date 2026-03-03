@@ -7,7 +7,7 @@ import type {
 } from '../../../../src/generated/server/worldmonitor/infrastructure/v1/service_server';
 
 import { UPSTREAM_TIMEOUT_MS } from './_shared';
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 import { cachedFetchJson } from '../../../_shared/redis';
 
 const REDIS_CACHE_KEY = 'infra:outages:v1';
@@ -144,7 +144,7 @@ export async function listInternetOutages(
       const response = await fetch(
         `${CLOUDFLARE_RADAR_URL}?dateRange=7d&limit=50`,
         {
-          headers: { Authorization: `Bearer ${token}`, 'User-Agent': CHROME_UA },
+          headers: { Authorization: `Bearer ${token}`, ...STANDARD_HEADERS },
           signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
         },
       );

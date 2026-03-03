@@ -12,7 +12,7 @@ import type {
   HackernewsItem,
 } from '../../../../src/generated/server/worldmonitor/research/v1/service_server';
 
-import { CHROME_UA, clampInt } from '../../../_shared/constants';
+import { STANDARD_HEADERS, clampInt } from '../../../_shared/constants';
 import { cachedFetchJson } from '../../../_shared/redis';
 
 const REDIS_CACHE_KEY = 'research:hackernews:v1';
@@ -32,7 +32,7 @@ async function fetchHackernewsItems(req: ListHackernewsItemsRequest): Promise<Ha
   // Step 1: Fetch story IDs
   const idsUrl = `https://hacker-news.firebaseio.com/v0/${feedType}stories.json`;
   const idsResponse = await fetch(idsUrl, {
-    headers: { 'User-Agent': CHROME_UA },
+    headers: { ...STANDARD_HEADERS },
     signal: AbortSignal.timeout(10000),
   });
 
@@ -52,7 +52,7 @@ async function fetchHackernewsItems(req: ListHackernewsItemsRequest): Promise<Ha
         try {
           const res = await fetch(
             `https://hacker-news.firebaseio.com/v0/item/${id}.json`,
-            { headers: { 'User-Agent': CHROME_UA }, signal: AbortSignal.timeout(5000) },
+            { headers: { ...STANDARD_HEADERS }, signal: AbortSignal.timeout(5000) },
           );
           if (!res.ok) return null;
           const raw: any = await res.json();

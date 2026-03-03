@@ -5,7 +5,7 @@
  * acled-events) with overlapping queries. This shared layer ensures
  * identical queries hit Redis instead of making redundant upstream calls.
  */
-import { CHROME_UA } from './constants';
+import { STANDARD_HEADERS } from './constants';
 import { cachedFetchJson } from './redis';
 
 const ACLED_API_URL = 'https://acleddata.com/api/acled/read';
@@ -62,7 +62,7 @@ export async function fetchAcledCached(opts: FetchAcledOptions): Promise<AcledRa
       headers: {
         Accept: 'application/json',
         Authorization: `Bearer ${token}`,
-        'User-Agent': CHROME_UA,
+        ...STANDARD_HEADERS,
       },
       signal: AbortSignal.timeout(ACLED_TIMEOUT_MS),
     });

@@ -6,7 +6,7 @@ import type {
 } from '../../../../src/generated/server/worldmonitor/intelligence/v1/service_server';
 
 import { UPSTREAM_TIMEOUT_MS } from './_shared';
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 import { cachedFetchJson } from '../../../_shared/redis';
 
 const REDIS_CACHE_KEY = 'intel:gdelt-docs:v1';
@@ -59,7 +59,7 @@ export async function searchGdeltDocuments(
         gdeltUrl.searchParams.set('timespan', timespan);
 
         const response = await fetch(gdeltUrl.toString(), {
-          headers: { 'User-Agent': CHROME_UA },
+          headers: { ...STANDARD_HEADERS },
           signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
         });
 

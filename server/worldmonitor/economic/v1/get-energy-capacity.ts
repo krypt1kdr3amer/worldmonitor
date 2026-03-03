@@ -10,7 +10,7 @@ import type {
   EnergyCapacityYear,
 } from '../../../../src/generated/server/worldmonitor/economic/v1/service_server';
 
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 import { cachedFetchJson } from '../../../_shared/redis';
 
 const REDIS_CACHE_KEY = 'economic:capacity:v1';
@@ -60,7 +60,7 @@ async function fetchCapacityForSource(
 
   const url = `https://api.eia.gov/v2/electricity/state-electricity-profiles/capability/data/?${params}`;
   const response = await fetch(url, {
-    headers: { Accept: 'application/json', 'User-Agent': CHROME_UA },
+    headers: { Accept: 'application/json', ...STANDARD_HEADERS },
     signal: AbortSignal.timeout(15000),
   });
 

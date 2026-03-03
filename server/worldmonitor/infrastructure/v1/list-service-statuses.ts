@@ -108,6 +108,7 @@ async function checkServiceStatus(service: ServiceDef): Promise<ServiceStatus> {
     const headers: Record<string, string> = {
       Accept: service.customParser === 'rss' ? 'application/xml, text/xml' : 'application/json, text/plain, */*',
       'Accept-Language': 'en-US,en;q=0.9',
+      'Accept-Encoding': 'gzip, deflate, br',
       'Cache-Control': 'no-cache',
     };
     if (service.customParser !== 'incidentio') {

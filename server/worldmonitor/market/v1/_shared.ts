@@ -1,7 +1,7 @@
 /**
  * Shared helpers, types, and constants for the market service handler RPCs.
  */
-import { CHROME_UA, yahooGate } from '../../../_shared/constants';
+import { STANDARD_HEADERS, yahooGate } from '../../../_shared/constants';
 
 // ========================================================================
 // Relay helpers (Railway proxy for Yahoo when Vercel IPs are rate-limited)
@@ -16,7 +16,7 @@ function getRelayBaseUrl(): string | null {
 }
 
 function getRelayHeaders(): Record<string, string> {
-  const headers: Record<string, string> = { 'User-Agent': CHROME_UA };
+  const headers: Record<string, string> = { ...STANDARD_HEADERS };
   const relaySecret = process.env.RELAY_SHARED_SECRET;
   if (relaySecret) {
     const relayHeader = (process.env.RELAY_AUTH_HEADER || 'x-relay-key').toLowerCase();
@@ -114,7 +114,7 @@ export async function fetchFinnhubQuote(
   try {
     const url = `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}`;
     const resp = await fetch(url, {
-      headers: { Accept: 'application/json', 'User-Agent': CHROME_UA, 'X-Finnhub-Token': apiKey },
+      headers: { Accept: 'application/json', ...STANDARD_HEADERS, 'X-Finnhub-Token': apiKey },
       signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
     if (!resp.ok) {
@@ -190,7 +190,7 @@ export async function fetchYahooQuote(
     await yahooGate();
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`;
     const resp = await fetch(url, {
-      headers: { 'User-Agent': CHROME_UA },
+      headers: { ...STANDARD_HEADERS },
       signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
     if (resp.ok) {

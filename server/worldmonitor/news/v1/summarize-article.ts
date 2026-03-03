@@ -12,7 +12,7 @@ import {
   getProviderCredentials,
   getCacheKey,
 } from './_shared';
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 
 // ======================================================================
 // Reasoning preamble detection
@@ -104,7 +104,7 @@ export async function summarizeArticle(
 
         const response = await fetch(apiUrl, {
           method: 'POST',
-          headers: { ...providerHeaders, 'User-Agent': CHROME_UA },
+          headers: { ...providerHeaders, ...STANDARD_HEADERS },
           body: JSON.stringify({
             model,
             messages: [

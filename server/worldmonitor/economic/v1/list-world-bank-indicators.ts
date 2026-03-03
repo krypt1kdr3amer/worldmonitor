@@ -10,7 +10,7 @@ import type {
   WorldBankCountryData,
 } from '../../../../src/generated/server/worldmonitor/economic/v1/service_server';
 
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 import { cachedFetchJson } from '../../../_shared/redis';
 
 const REDIS_CACHE_KEY = 'economic:worldbank:v1';
@@ -43,7 +43,7 @@ async function fetchWorldBankIndicators(
     const response = await fetch(wbUrl, {
       headers: {
         Accept: 'application/json',
-        'User-Agent': CHROME_UA,
+        ...STANDARD_HEADERS,
       },
       signal: AbortSignal.timeout(15000),
     });

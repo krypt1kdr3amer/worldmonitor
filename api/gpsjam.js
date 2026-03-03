@@ -21,7 +21,7 @@ async function readFromRedis() {
   if (!url || !token) return null;
 
   const resp = await fetch(`${url}/get/${encodeURIComponent(REDIS_KEY)}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${token}`, 'Accept-Encoding': 'gzip, deflate, br' },
     signal: AbortSignal.timeout(3_000),
   });
   if (!resp.ok) return null;
@@ -34,7 +34,7 @@ async function readFromRedis() {
 
 async function fetchDirectFromGpsJam() {
   const manifestResp = await fetch(`${BASE_URL}/manifest.csv`, {
-    headers: { 'User-Agent': UA },
+    headers: { 'User-Agent': UA, 'Accept-Encoding': 'gzip, deflate, br' },
     signal: AbortSignal.timeout(10_000),
   });
   if (!manifestResp.ok) throw new Error(`Manifest HTTP ${manifestResp.status}`);
@@ -43,7 +43,7 @@ async function fetchDirectFromGpsJam() {
   const latestDate = lines[lines.length - 1].split(',')[0];
 
   const hexResp = await fetch(`${BASE_URL}/${latestDate}-h3_4.csv`, {
-    headers: { 'User-Agent': UA },
+    headers: { 'User-Agent': UA, 'Accept-Encoding': 'gzip, deflate, br' },
     signal: AbortSignal.timeout(15_000),
   });
   if (!hexResp.ok) throw new Error(`Hex data HTTP ${hexResp.status}`);

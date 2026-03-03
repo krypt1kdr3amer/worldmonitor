@@ -10,7 +10,7 @@ import type {
 } from '../../../../src/generated/server/worldmonitor/intelligence/v1/service_server';
 
 import { UPSTREAM_TIMEOUT_MS } from './_shared';
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 import { cachedFetchJson } from '../../../_shared/redis';
 
 const REDIS_CACHE_KEY = 'intel:pizzint:v1';
@@ -40,7 +40,7 @@ export async function getPizzintStatus(
       let pizzint: PizzintStatus | undefined;
       try {
         const resp = await fetch(PIZZINT_API, {
-          headers: { Accept: 'application/json', 'User-Agent': CHROME_UA },
+          headers: { Accept: 'application/json', ...STANDARD_HEADERS },
           signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
         });
         if (!resp.ok) throw new Error(`PizzINT API returned ${resp.status}`);
@@ -119,7 +119,7 @@ export async function getPizzintStatus(
         try {
           const url = `${GDELT_BATCH_API}?pairs=${encodeURIComponent(DEFAULT_GDELT_PAIRS)}&method=gpr`;
           const resp = await fetch(url, {
-            headers: { Accept: 'application/json', 'User-Agent': CHROME_UA },
+            headers: { Accept: 'application/json', ...STANDARD_HEADERS },
             signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
           });
           if (resp.ok) {

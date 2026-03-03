@@ -20,7 +20,7 @@ import {
   fetchNotamClosures,
   buildNotamAlert,
 } from './_shared';
-import { CHROME_UA } from '../../../_shared/constants';
+import { STANDARD_HEADERS } from '../../../_shared/constants';
 import { cachedFetchJson, getCachedJson } from '../../../_shared/redis';
 
 const FAA_CACHE_KEY = 'aviation:delays:faa:v1';
@@ -40,7 +40,7 @@ export async function listAirportDelays(
       FAA_CACHE_KEY, CACHE_TTL, async () => {
         const alerts: AirportDelayAlert[] = [];
         const faaResponse = await fetch(FAA_URL, {
-          headers: { Accept: 'application/xml', 'User-Agent': CHROME_UA },
+          headers: { Accept: 'application/xml', ...STANDARD_HEADERS },
           signal: AbortSignal.timeout(15_000),
         });
 
