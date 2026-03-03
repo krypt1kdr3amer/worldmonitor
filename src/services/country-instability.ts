@@ -213,6 +213,7 @@ export function clearCountryData(): void {
   countryDataMap.clear();
   hotspotActivityMap.clear();
   newsEventIndexMap.clear();
+  intelligenceSignalsLoaded = false;
 }
 
 export function getCountryData(code: string): CountryData | undefined {

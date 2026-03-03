@@ -345,7 +345,11 @@ export class CountryIntelManager implements AppModule {
     if (!code || code === '__loading__') return;
     const name = TIER1_COUNTRIES[code] ?? CountryIntelManager.resolveCountryName(code);
     const scores = calculateCII();
-    const score = scores.find((s) => s.code === code) ?? null;
+    let score = scores.find((s) => s.code === code) ?? null;
+    if (!hasIntelligenceSignalsLoaded()) {
+      const cached = getCachedScores()?.cii.find((c) => c.code === code);
+      if (cached) score = toCountryScore(cached);
+    }
     const signals = this.getCountrySignals(code, name);
     page.updateScore?.(score, signals);
   }
