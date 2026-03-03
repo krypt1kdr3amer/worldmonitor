@@ -68,6 +68,39 @@ const LEARNING_DURATION_MS = 15 * 60 * 1000;
 let learningStartTime: number | null = null;
 let isLearningComplete = false;
 let hasCachedScoresAvailable = false;
+let intelligenceSignalsLoaded = false;
+
+export function setIntelligenceSignalsLoaded(): void {
+  intelligenceSignalsLoaded = true;
+}
+
+export function hasIntelligenceSignalsLoaded(): boolean {
+  return intelligenceSignalsLoaded;
+}
+
+export function hasAnyIntelligenceData(): boolean {
+  for (const data of countryDataMap.values()) {
+    if (
+      data.conflicts.length > 0 ||
+      data.protests.length > 0 ||
+      data.strikes.length > 0 ||
+      data.militaryFlights.length > 0 ||
+      data.militaryVessels.length > 0 ||
+      data.outages.length > 0 ||
+      data.ucdpStatus !== null ||
+      data.hapiSummary !== null ||
+      data.climateStress > 0 ||
+      data.gpsJammingHighCount > 0 ||
+      data.gpsJammingMediumCount > 0 ||
+      data.aisDisruptionHighCount > 0 ||
+      data.aisDisruptionElevatedCount > 0 ||
+      data.aisDisruptionLowCount > 0
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
 
 export function setHasCachedScores(hasScores: boolean): void {
   hasCachedScoresAvailable = hasScores;
@@ -302,6 +335,10 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
 }
 
 const hotspotActivityMap = new Map<string, number>();
+
+export function resetHotspotActivity(): void {
+  hotspotActivityMap.clear();
+}
 
 function trackHotspotActivity(lat: number, lon: number, weight: number = 1): void {
   for (const hotspot of INTEL_HOTSPOTS) {
