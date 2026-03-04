@@ -22,7 +22,7 @@ const REDIS_CACHE_KEY = 'supply_chain:chokepoints:v2';
 const REDIS_CACHE_TTL = 300; // 5 min
 const THREAT_CONFIG_MAX_AGE_DAYS = 120;
 const NEARBY_CHOKEPOINT_RADIUS_KM = 300;
-const THREAT_CONFIG_STALE_NOTE = `Threat baseline stale (> ${THREAT_CONFIG_MAX_AGE_DAYS} days): using live warnings/AIS only`;
+const THREAT_CONFIG_STALE_NOTE = `Threat baseline last reviewed > ${THREAT_CONFIG_MAX_AGE_DAYS} days ago — review recommended`;
 
 type ThreatLevel = 'war_zone' | 'critical' | 'high' | 'elevated' | 'normal';
 type GeoCoordinates = { latitude: number; longitude: number };
@@ -127,11 +127,6 @@ function keywordScore(cp: ChokepointConfig, normalizedText: string): number {
 }
 
 export function resolveChokepointId(input: { text: string; location?: GeoCoordinates }): string | null {
-  const nearest = nearestChokepoint(input.location);
-  if (nearest && nearest.distanceKm <= NEARBY_CHOKEPOINT_RADIUS_KM) {
-    return nearest.id;
-  }
-
   const normalizedText = normalizeText(input.text);
   let best: { id: string; score: number; distanceKm: number } | null = null;
 
@@ -148,7 +143,14 @@ export function resolveChokepointId(input: { text: string; location?: GeoCoordin
     }
   }
 
-  return best?.id ?? null;
+  if (best) return best.id;
+
+  const nearest = nearestChokepoint(input.location);
+  if (nearest && nearest.distanceKm <= NEARBY_CHOKEPOINT_RADIUS_KM) {
+    return nearest.id;
+  }
+
+  return null;
 }
 
 function groupWarningsByChokepoint(warnings: NavigationalWarning[]): Map<string, NavigationalWarning[]> {
@@ -228,22 +230,23 @@ async function fetchChokepointData(): Promise<ChokepointFetchResult> {
       return Math.max(max, score);
     }, 0);
 
-    const threatScore = threatConfigFresh ? ((THREAT_LEVEL as Record<string, number>)[cp.threatLevel] ?? 0) : 0;
+    const threatScore = (THREAT_LEVEL as Record<string, number>)[cp.threatLevel] ?? 0;
     const disruptionScore = computeDisruptionScore(threatScore, matchedWarnings.length, maxSeverity);
     const status = scoreToStatus(disruptionScore);
 
     const congestionLevel = maxSeverity >= 3 ? 'high' : maxSeverity >= 2 ? 'elevated' : maxSeverity >= 1 ? 'low' : 'normal';
 
     const descriptions: string[] = [];
-    if (threatConfigFresh && cp.threatDescription) {
+    if (cp.threatDescription) {
       descriptions.push(cp.threatDescription);
-    } else if (!threatConfigFresh) {
+    }
+    if (!threatConfigFresh) {
       descriptions.push(THREAT_CONFIG_STALE_NOTE);
     }
     if (matchedWarnings.length > 0 || matchedDisruptions.length > 0) {
       descriptions.push(`Navigational warnings: ${matchedWarnings.length}`);
       descriptions.push(`AIS vessel disruptions: ${matchedDisruptions.length}`);
-    } else if (!cp.threatDescription || !threatConfigFresh) {
+    } else if (!cp.threatDescription) {
       descriptions.push('No active disruptions');
     }
 
