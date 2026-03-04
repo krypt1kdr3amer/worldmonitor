@@ -1,5 +1,4 @@
-// ESM wrapper for shared RSS allowed domains (Vercel edge functions).
-// Source of truth: shared/rss-allowed-domains.cjs (CJS).
-import { createRequire } from 'node:module';
-const require = createRequire(import.meta.url);
-export default require('../shared/rss-allowed-domains.cjs');
+// Edge-compatible ESM wrapper for shared RSS allowed domains.
+// Source of truth: shared/rss-allowed-domains.json
+import domains from '../shared/rss-allowed-domains.json' with { type: 'json' };
+export default domains;
