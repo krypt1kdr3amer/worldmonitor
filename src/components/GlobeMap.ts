@@ -1259,6 +1259,7 @@ export class GlobeMap {
     const conflictAlt: Record<string, number> = { high: 0.006, medium: 0.004, low: 0.003 };
     (this.globe as any)
       .polygonsData(polys)
+      .polygonGeoJsonGeometry((d: GlobePolygon) => ({ type: 'Polygon', coordinates: d.coords }))
       .polygonCapColor((d: GlobePolygon) => {
         if (d._kind === 'cii') return colors[d.level!] ?? 'rgba(0,0,0,0)';
         if (d._kind === 'conflict') return conflictCap[d.intensity!] ?? conflictCap.low;
