@@ -8259,16 +8259,16 @@ a.prediction-link:hover {
     align-items: center;
     justify-content: center;
     position: fixed;
-    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     right: 16px;
-    width: 48px;
-    height: 48px;
-    background: var(--surface);
-    border: 1px solid var(--border);
+    width: 56px;
+    height: 56px;
+    background: var(--accent, #4488ff);
+    border: none;
     border-radius: 50%;
-    box-shadow: 0 4px 16px var(--shadow-color);
-    color: var(--text);
-    font-size: 20px;
+    box-shadow: 0 4px 20px rgba(68, 136, 255, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+    color: #fff;
+    font-size: 22px;
     cursor: pointer;
     z-index: 500;
     -webkit-tap-highlight-color: transparent;
@@ -8276,7 +8276,7 @@ a.prediction-link:hover {
 
   .search-mobile-fab:active {
     transform: scale(0.9);
-    background: var(--bg);
+    opacity: 0.85;
   }
 }
 
