@@ -5,6 +5,7 @@ import { t } from '../services/i18n';
 import { trackWebcamSelected, trackWebcamRegionFiltered } from '@/services/analytics';
 import { getStreamQuality, subscribeStreamQualityChange } from '@/services/ai-flow-settings';
 import { isMobileDevice } from '@/utils';
+import { getLiveStreamsAlwaysOn, subscribeLiveStreamsSettingsChange } from '@/services/live-stream-settings';
 
 type WebcamRegion = 'iran' | 'middle-east' | 'europe' | 'asia' | 'americas';
 
@@ -51,11 +52,8 @@ const WEBCAM_FEEDS: WebcamFeed[] = [
 
 const MAX_GRID_CELLS = 4;
 
-// Default behavior: keep webcams running (wallboard / second-screen use).
-// Eco mode optionally pauses streams after inactivity to reduce CPU/bandwidth.
-const STORAGE_KEY_WEBCAMS_ALWAYS_ON = 'worldmonitor-live-webcams-always-on';
+// Eco mode pauses streams after inactivity to save CPU/bandwidth.
 const ECO_IDLE_PAUSE_MS = 5 * 60 * 1000;
-
 
 type ViewMode = 'grid' | 'single';
 type RegionFilter = 'all' | WebcamRegion;
@@ -74,10 +72,10 @@ export class LiveWebcamsPanel extends Panel {
   private boundVisibilityHandler!: () => void;
   private idleDetectionEnabled = false;
   private isIdle = false;
-  private alwaysOn = LiveWebcamsPanel.loadAlwaysOnDefaultTrue();
+  private alwaysOn = getLiveStreamsAlwaysOn();
+  private unsubscribeStreamSettings: (() => void) | null = null;
 
   // UI
-  private modeBtn: HTMLButtonElement | null = null;
   private fullscreenBtn: HTMLButtonElement | null = null;
   private isFullscreen = false;
   private readonly forceSingleView = !isDesktopRuntime() && isMobileDevice();
@@ -94,40 +92,13 @@ export class LiveWebcamsPanel extends Panel {
     this.setupIntersectionObserver();
     this.setupIdleDetection();
     subscribeStreamQualityChange(() => this.render());
+    this.unsubscribeStreamSettings = subscribeLiveStreamsSettingsChange((alwaysOn) => {
+      this.alwaysOn = alwaysOn;
+      this.applyIdleMode();
+      if (this.isVisible) this.render();
+    });
     this.render();
     document.addEventListener('keydown', this.boundFullscreenEscHandler);
-  }
-
-  private static loadAlwaysOnDefaultTrue(): boolean {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY_WEBCAMS_ALWAYS_ON);
-      if (raw === null) return true;
-      return raw === 'true';
-    } catch {
-      return true;
-    }
-  }
-
-  private persistAlwaysOn(): void {
-    try { localStorage.setItem(STORAGE_KEY_WEBCAMS_ALWAYS_ON, String(this.alwaysOn)); } catch {}
-  }
-
-  private updateModeButton(): void {
-    if (!this.modeBtn) return;
-    // Visual: reuse existing toolbar button styling and highlight when Always On.
-    this.modeBtn.className = `webcam-view-btn${this.alwaysOn ? ' active' : ''}`;
-    this.modeBtn.title = this.alwaysOn
-      ? 'Always On: streams keep running (no idle pause)'
-      : 'Eco Mode: pause streams after inactivity to save CPU/bandwidth';
-    this.modeBtn.textContent = this.alwaysOn ? 'Always On' : 'Eco';
-  }
-
-  private toggleAlwaysOn(): void {
-    this.alwaysOn = !this.alwaysOn;
-    this.persistAlwaysOn();
-    this.updateModeButton();
-    this.applyIdleMode();
-    if (this.isVisible) this.render();
   }
 
   private createFullscreenButton(): void {
@@ -226,21 +197,6 @@ export class LiveWebcamsPanel extends Panel {
     viewGroup.appendChild(gridBtn);
     viewGroup.appendChild(singleBtn);
 
-    const modeGroup = document.createElement('div');
-    modeGroup.className = 'webcam-toolbar-group';
-
-    this.modeBtn = document.createElement('button');
-    this.modeBtn.className = 'webcam-mode-btn';
-    this.modeBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.toggleAlwaysOn();
-    });
-    this.updateModeButton();
-    modeGroup.appendChild(this.modeBtn);
-
-    this.toolbar.appendChild(regionGroup);
-    this.toolbar.appendChild(viewGroup);
-    this.toolbar.appendChild(modeGroup);
     this.element.insertBefore(this.toolbar, this.content);
   }
 
@@ -477,10 +433,8 @@ export class LiveWebcamsPanel extends Panel {
     // Background: always suspend when the document is hidden.
     this.boundVisibilityHandler = () => {
       if (document.hidden) {
+        // Suspend idle timer so background playback isn't killed.
         if (this.idleTimeout) clearTimeout(this.idleTimeout);
-        this.isIdle = true;
-        this.destroyIframes();
-        this.content.innerHTML = `<div class="webcam-placeholder">${escapeHtml(t('components.webcams.paused'))}</div>`;
         return;
       }
 
@@ -530,6 +484,8 @@ export class LiveWebcamsPanel extends Panel {
     });
     if (this.isFullscreen) this.toggleFullscreen();
     this.observer?.disconnect();
+    this.unsubscribeStreamSettings?.();
+    this.unsubscribeStreamSettings = null;
     this.destroyIframes();
     super.destroy();
   }

@@ -7,6 +7,7 @@ import { IDLE_PAUSE_MS, STORAGE_KEYS, SITE_VARIANT } from '@/config';
 import { escapeHtml, sanitizeUrl } from '@/utils/sanitize';
 
 import { getStreamQuality } from '@/services/ai-flow-settings';
+import { getLiveStreamsAlwaysOn, subscribeLiveStreamsSettingsChange } from '@/services/live-stream-settings';
 
 // YouTube IFrame Player API types
 type YouTubePlayer = {
@@ -317,6 +318,9 @@ export class LiveNewsPanel extends Panel {
   private readonly IDLE_PAUSE_MS = IDLE_PAUSE_MS;
   private boundVisibilityHandler!: () => void;
   private boundIdleResetHandler!: () => void;
+  private idleDetectionEnabled = false;
+  private alwaysOn = getLiveStreamsAlwaysOn();
+  private unsubscribeStreamSettings: (() => void) | null = null;
 
   // YouTube Player API state
   private player: YouTubePlayer | null = null;
@@ -366,6 +370,10 @@ export class LiveNewsPanel extends Panel {
     this.renderPlaceholder();
     this.setupLazyInit();
     this.setupIdleDetection();
+    this.unsubscribeStreamSettings = subscribeLiveStreamsSettingsChange((alwaysOn) => {
+      this.alwaysOn = alwaysOn;
+      this.applyIdleMode();
+    });
     document.addEventListener('keydown', this.boundFullscreenEscHandler);
   }
 
@@ -509,6 +517,34 @@ export class LiveNewsPanel extends Panel {
     return fallbackOrigin;
   }
 
+
+  private applyIdleMode(): void {
+    const activityEvents = ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousemove'] as const;
+
+    if (this.alwaysOn) {
+      if (this.idleTimeout) {
+        clearTimeout(this.idleTimeout);
+        this.idleTimeout = null;
+      }
+      if (this.idleDetectionEnabled) {
+        activityEvents.forEach((event) => {
+          document.removeEventListener(event, this.boundIdleResetHandler);
+        });
+        this.idleDetectionEnabled = false;
+      }
+      return;
+    }
+
+    if (!this.idleDetectionEnabled) {
+      activityEvents.forEach((event) => {
+        document.addEventListener(event, this.boundIdleResetHandler, { passive: true });
+      });
+      this.idleDetectionEnabled = true;
+    }
+
+    this.boundIdleResetHandler();
+  }
+
   private setupIdleDetection(): void {
     // Suspend idle timer when hidden, resume when visible
     this.boundVisibilityHandler = () => {
@@ -517,24 +553,20 @@ export class LiveNewsPanel extends Panel {
         if (this.idleTimeout) clearTimeout(this.idleTimeout);
       } else {
         this.resumeFromIdle();
-        this.boundIdleResetHandler();
+        this.applyIdleMode();
       }
     };
     document.addEventListener('visibilitychange', this.boundVisibilityHandler);
 
     // Track user activity to detect idle (pauses after 5 min inactivity)
     this.boundIdleResetHandler = () => {
+      if (this.alwaysOn) return;
       if (this.idleTimeout) clearTimeout(this.idleTimeout);
       this.resumeFromIdle();
       this.idleTimeout = setTimeout(() => this.pauseForIdle(), this.IDLE_PAUSE_MS);
     };
 
-    ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousemove'].forEach(event => {
-      document.addEventListener(event, this.boundIdleResetHandler, { passive: true });
-    });
-
-    // Start the idle timer
-    this.boundIdleResetHandler();
+    this.applyIdleMode();
   }
 
   private pauseForIdle(): void {
@@ -1465,6 +1497,8 @@ export class LiveNewsPanel extends Panel {
 
   public destroy(): void {
     this.destroyPlayer();
+    this.unsubscribeStreamSettings?.();
+    this.unsubscribeStreamSettings = null;
 
     if (this.lazyObserver) { this.lazyObserver.disconnect(); this.lazyObserver = null; }
     if (this.idleCallbackId !== null) {
@@ -1482,9 +1516,12 @@ export class LiveNewsPanel extends Panel {
     document.removeEventListener('keydown', this.boundFullscreenEscHandler);
     window.removeEventListener('message', this.boundMessageHandler);
     if (this.isFullscreen) this.toggleFullscreen();
-    ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousemove'].forEach(event => {
-      document.removeEventListener(event, this.boundIdleResetHandler);
-    });
+    if (this.idleDetectionEnabled) {
+      ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousemove'].forEach(event => {
+        document.removeEventListener(event, this.boundIdleResetHandler);
+      });
+      this.idleDetectionEnabled = false;
+    }
 
     this.playerContainer = null;
 
