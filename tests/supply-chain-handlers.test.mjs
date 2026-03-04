@@ -135,13 +135,23 @@ describe('Chokepoint assignment', () => {
     );
   });
 
-  it('uses nearest location when event is geospatially close to a chokepoint', () => {
+  it('uses nearest location when text has no match', () => {
     assert.equal(
       resolveChokepointId({
         text: '',
         location: { latitude: 26.6, longitude: 56.2 }, // near Hormuz
       }),
       'hormuz',
+    );
+  });
+
+  it('text evidence beats nearby location (P2 regression)', () => {
+    assert.equal(
+      resolveChokepointId({
+        text: 'Houthi drone strike near Bab el-Mandeb strait',
+        location: { latitude: 30.4, longitude: 32.3 }, // near Suez
+      }),
+      'bab_el_mandeb',
     );
   });
 });
