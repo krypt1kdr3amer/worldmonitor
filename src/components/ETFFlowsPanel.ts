@@ -55,7 +55,7 @@ export class ETFFlowsPanel extends Panel {
         this.error = null;
 
         if (this.data && this.data.etfs.length === 0 && !this.data.rateLimited && attempt < 2) {
-          this.showRetrying();
+          this.showRetrying(undefined, 20);
           await new Promise(r => setTimeout(r, 20_000));
           if (!this.element?.isConnected) return;
           continue;
@@ -65,7 +65,7 @@ export class ETFFlowsPanel extends Panel {
         if (this.isAbortError(err)) return;
         if (!this.element?.isConnected) return;
         if (attempt < 2) {
-          this.showRetrying();
+          this.showRetrying(undefined, 20);
           await new Promise(r => setTimeout(r, 20_000));
           if (!this.element?.isConnected) return;
           continue;
@@ -84,7 +84,7 @@ export class ETFFlowsPanel extends Panel {
     }
 
     if (this.error || !this.data) {
-      this.showError(this.error || t('common.noDataShort'));
+      this.showError(this.error || t('common.noDataShort'), () => void this.fetchData());
       return;
     }
 
