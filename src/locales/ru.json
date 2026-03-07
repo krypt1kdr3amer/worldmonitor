@@ -6,6 +6,9 @@
   "countryBrief": {
     "identifying": "Определение страны...",
     "locating": "Определение региона...",
+    "geocodeFailed": "Не удалось определить страну в этом местоположении",
+    "retryBtn": "Повторить",
+    "closeBtn": "Закрыть",
     "limitedCoverage": "Ограниченное покрытие",
     "instabilityIndex": "Индекс нестабильности",
     "notTracked": "Не отслеживается — {{country}} отсутствует в списке CII первого уровня",
@@ -970,6 +973,10 @@
         "ciiCritical": "Критический (81–100)"
       },
       "layerGuide": "Справочник слоёв",
+      "layerWarningTitle": "Уведомление о производительности",
+      "layerWarningBody": "Включение более {{threshold}} слоёв может повлиять на производительность отрисовки и частоту кадров.",
+      "layerWarningDismiss": "Больше не показывать",
+      "layerWarningOk": "Понятно",
       "layersTitle": "Слои",
       "timeAll": "Все",
       "views": {

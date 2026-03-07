@@ -6,6 +6,9 @@
   "countryBrief": {
     "identifying": "Identificando el país...",
     "locating": "Localizando región...",
+    "geocodeFailed": "No se pudo identificar un país en esta ubicación",
+    "retryBtn": "Reintentar",
+    "closeBtn": "Cerrar",
     "limitedCoverage": "Cobertura limitada",
     "instabilityIndex": "Índice de inestabilidad",
     "notTracked": "Sin seguimiento: {{country}} no está en la lista de nivel 1 de CII",
@@ -877,6 +880,10 @@
       },
       "layersTitle": "capas",
       "layerGuide": "Guía de capas",
+      "layerWarningTitle": "Aviso de rendimiento",
+      "layerWarningBody": "Activar más de {{threshold}} capas puede afectar el rendimiento de renderizado y la tasa de fotogramas.",
+      "layerWarningDismiss": "No volver a mostrar",
+      "layerWarningOk": "Entendido",
       "tooltip": {
         "earthquake": "Terremoto",
         "militaryAircraft": "Aviones militares",

@@ -6,6 +6,9 @@
   "countryBrief": {
     "identifying": "Đang xác định quốc gia...",
     "locating": "Đang định vị khu vực...",
+    "geocodeFailed": "Không thể xác định quốc gia tại vị trí này",
+    "retryBtn": "Thử lại",
+    "closeBtn": "Đóng",
     "limitedCoverage": "Phạm vi theo dõi hạn chế",
     "instabilityIndex": "Chỉ số Bất ổn",
     "notTracked": "Không theo dõi — {{country}} không nằm trong danh sách CII cấp 1",
@@ -970,6 +973,10 @@
         "ciiCritical": "Nghiêm trọng (81–100)"
       },
       "layerGuide": "Hướng dẫn Lớp",
+      "layerWarningTitle": "Lưu ý về hiệu suất",
+      "layerWarningBody": "Bật hơn {{threshold}} lớp có thể ảnh hưởng đến hiệu suất hiển thị và tốc độ khung hình.",
+      "layerWarningDismiss": "Không hiển thị lại",
+      "layerWarningOk": "Đã hiểu",
       "layersTitle": "Lớp",
       "timeAll": "Tất cả",
       "views": {

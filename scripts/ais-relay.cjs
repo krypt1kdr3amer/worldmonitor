@@ -178,6 +178,41 @@ function upstashSet(key, value, ttlSeconds) {
   });
 }
 
+function upstashMGet(keys) {
+  return new Promise((resolve) => {
+    if (!UPSTASH_ENABLED || keys.length === 0) return resolve([]);
+    const url = new URL('/pipeline', UPSTASH_REDIS_REST_URL);
+    const body = JSON.stringify(keys.map((k) => ['GET', k]));
+    const req = https.request(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${UPSTASH_REDIS_REST_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      timeout: 10000,
+    }, (resp) => {
+      if (resp.statusCode < 200 || resp.statusCode >= 300) {
+        resp.resume();
+        return resolve(keys.map(() => null));
+      }
+      let data = '';
+      resp.on('data', (chunk) => { data += chunk; });
+      resp.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          resolve(parsed.map((r) => {
+            if (!r?.result) return null;
+            try { return JSON.parse(r.result); } catch { return null; }
+          }));
+        } catch { resolve(keys.map(() => null)); }
+      });
+    });
+    req.on('error', () => resolve(keys.map(() => null)));
+    req.on('timeout', () => { req.destroy(); resolve(keys.map(() => null)); });
+    req.end(body);
+  });
+}
+
 let upstreamSocket = null;
 let upstreamPaused = false;
 let upstreamQueue = [];
@@ -1155,7 +1190,8 @@ async function seedSectorSummary() {
   }));
   const quotesPayload = { quotes: sectorQuotes, finnhubSkipped: false, skipReason: '', rateLimited: false };
   const ok2 = await upstashSet(quotesKey, quotesPayload, MARKET_SEED_TTL);
-  console.log(`[Market] Seeded ${sectors.length}/${SECTOR_SYMBOLS.length} sectors (redis: ${ok && ok2 ? 'OK' : 'PARTIAL'})`);
+  const ok3 = await upstashSet('seed-meta:market:sectors', { fetchedAt: Date.now(), recordCount: sectors.length }, 604800);
+  console.log(`[Market] Seeded ${sectors.length}/${SECTOR_SYMBOLS.length} sectors (redis: ${ok && ok2 && ok3 ? 'OK' : 'PARTIAL'})`);
   return sectors.length;
 }
 
@@ -1395,13 +1431,16 @@ const AVIATION_SEED_TTL = 14400; // 4h — survives 1 missed cycle
 const AVIATION_REDIS_KEY = 'aviation:delays:intl:v3';
 const AVIATION_BATCH_CONCURRENCY = 10;
 const AVIATION_MIN_FLIGHTS_FOR_CLOSURE = 10;
+const RESOLVED_STATUSES = new Set(['cancelled', 'landed', 'active', 'arrived', 'diverted']);
 
 // Must match src/config/airports.ts AVIATIONSTACK_AIRPORTS — update both when changing
 const AVIATIONSTACK_AIRPORTS = [
-  'YYZ', 'MEX', 'GRU', 'EZE', 'BOG',
+  'YYZ', 'YVR', 'MEX', 'GRU', 'EZE', 'BOG', 'SCL',
   'LHR', 'CDG', 'FRA', 'AMS', 'MAD', 'FCO', 'MUC', 'BCN', 'ZRH', 'IST', 'VIE', 'CPH',
+  'DUB', 'LIS', 'ATH', 'WAW',
   'HND', 'NRT', 'PEK', 'PVG', 'HKG', 'SIN', 'ICN', 'BKK', 'SYD', 'DEL', 'BOM', 'KUL',
-  'DXB', 'DOH', 'AUH', 'RUH', 'CAI', 'TLV',
+  'CAN', 'TPE', 'MNL',
+  'DXB', 'DOH', 'AUH', 'RUH', 'CAI', 'TLV', 'AMM', 'KWI', 'CMN',
   'JNB', 'NBO', 'LOS', 'ADD', 'CPT',
 ];
 
@@ -1447,6 +1486,19 @@ const AIRPORT_META = {
   LOS: { icao: 'DNMM', name: 'Murtala Muhammed International', city: 'Lagos', country: 'Nigeria', lat: 6.5774, lon: 3.3212, region: 'africa' },
   ADD: { icao: 'HAAB', name: 'Bole International', city: 'Addis Ababa', country: 'Ethiopia', lat: 8.9779, lon: 38.7993, region: 'africa' },
   CPT: { icao: 'FACT', name: 'Cape Town International', city: 'Cape Town', country: 'South Africa', lat: -33.9715, lon: 18.6021, region: 'africa' },
+  // Added airports
+  YVR: { icao: 'CYVR', name: 'Vancouver International', city: 'Vancouver', country: 'Canada', lat: 49.1947, lon: -123.1792, region: 'americas' },
+  SCL: { icao: 'SCEL', name: 'Arturo Merino Benítez', city: 'Santiago', country: 'Chile', lat: -33.3930, lon: -70.7858, region: 'americas' },
+  DUB: { icao: 'EIDW', name: 'Dublin Airport', city: 'Dublin', country: 'Ireland', lat: 53.4264, lon: -6.2499, region: 'europe' },
+  LIS: { icao: 'LPPT', name: 'Humberto Delgado Airport', city: 'Lisbon', country: 'Portugal', lat: 38.7756, lon: -9.1354, region: 'europe' },
+  ATH: { icao: 'LGAV', name: 'Athens International', city: 'Athens', country: 'Greece', lat: 37.9364, lon: 23.9445, region: 'europe' },
+  WAW: { icao: 'EPWA', name: 'Warsaw Chopin Airport', city: 'Warsaw', country: 'Poland', lat: 52.1657, lon: 20.9671, region: 'europe' },
+  CAN: { icao: 'ZGGG', name: 'Guangzhou Baiyun International', city: 'Guangzhou', country: 'China', lat: 23.3924, lon: 113.2988, region: 'apac' },
+  TPE: { icao: 'RCTP', name: 'Taiwan Taoyuan International', city: 'Taipei', country: 'Taiwan', lat: 25.0797, lon: 121.2342, region: 'apac' },
+  MNL: { icao: 'RPLL', name: 'Ninoy Aquino International', city: 'Manila', country: 'Philippines', lat: 14.5086, lon: 121.0197, region: 'apac' },
+  AMM: { icao: 'OJAI', name: 'Queen Alia International', city: 'Amman', country: 'Jordan', lat: 31.7226, lon: 35.9932, region: 'mena' },
+  KWI: { icao: 'OKBK', name: 'Kuwait International', city: 'Kuwait City', country: 'Kuwait', lat: 29.2266, lon: 47.9689, region: 'mena' },
+  CMN: { icao: 'GMMN', name: 'Mohammed V International', city: 'Casablanca', country: 'Morocco', lat: 33.3675, lon: -7.5898, region: 'mena' },
 };
 
 const REGION_MAP = {
@@ -1484,7 +1536,8 @@ function aviationDetermineSeverity(avgDelay, delayedPct) {
 
 function fetchAviationStackSingle(apiKey, iata) {
   return new Promise((resolve) => {
-    const url = `https://api.aviationstack.com/v1/flights?access_key=${apiKey}&dep_iata=${iata}&limit=100`;
+    const today = new Date().toISOString().slice(0, 10);
+    const url = `https://api.aviationstack.com/v1/flights?access_key=${apiKey}&dep_iata=${iata}&flight_date=${today}&limit=100`;
     const req = https.get(url, {
       headers: { 'User-Agent': CHROME_UA },
       timeout: 5000,
@@ -1523,8 +1576,9 @@ function aviationAggregateFlights(iata, flights) {
   const meta = AIRPORT_META[iata];
   if (!meta) return null;
 
-  let delayed = 0, cancelled = 0, totalDelay = 0;
+  let delayed = 0, cancelled = 0, totalDelay = 0, resolved = 0;
   for (const f of flights) {
+    if (RESOLVED_STATUSES.has(f.flight_status || '')) resolved++;
     if (f.flight_status === 'cancelled') cancelled++;
     if (f.departure?.delay && f.departure.delay > 0) {
       delayed++;
@@ -1532,7 +1586,7 @@ function aviationAggregateFlights(iata, flights) {
     }
   }
 
-  const total = flights.length;
+  const total = resolved >= AVIATION_MIN_FLIGHTS_FOR_CLOSURE ? resolved : flights.length;
   const cancelledPct = (cancelled / total) * 100;
   const delayedPct = (delayed / total) * 100;
   const avgDelay = delayed > 0 ? Math.round(totalDelay / delayed) : 0;
@@ -1828,7 +1882,7 @@ async function cyberFetchFeodo(limit, cutoffMs) {
       if (t) { out.push(t); if (out.length >= limit) break; }
     }
     return out;
-  } catch { return []; }
+  } catch (e) { console.warn('[Cyber] Feodo fetch failed:', e?.message || e); return []; }
 }
 async function cyberFetchUrlhaus(limit, cutoffMs) {
   if (!URLHAUS_AUTH_KEY) return [];
@@ -1858,7 +1912,7 @@ async function cyberFetchUrlhaus(limit, cutoffMs) {
       if (t) { out.push(t); if (out.length >= limit) break; }
     }
     return out;
-  } catch { return []; }
+  } catch (e) { console.warn('[Cyber] URLhaus fetch failed:', e?.message || e); return []; }
 }
 async function cyberFetchC2Intel(limit) {
   try {
@@ -1880,7 +1934,7 @@ async function cyberFetchC2Intel(limit) {
       if (t) { out.push(t); if (out.length >= limit) break; }
     }
     return out;
-  } catch { return []; }
+  } catch (e) { console.warn('[Cyber] C2Intel fetch failed:', e?.message || e); return []; }
 }
 async function cyberFetchOtx(limit, days) {
   if (!OTX_API_KEY) return [];
@@ -1897,7 +1951,7 @@ async function cyberFetchOtx(limit, days) {
       if (t) { out.push(t); if (out.length >= limit) break; }
     }
     return out;
-  } catch { return []; }
+  } catch (e) { console.warn('[Cyber] OTX fetch failed:', e?.message || e); return []; }
 }
 async function cyberFetchAbuseIpDb(limit) {
   if (!ABUSEIPDB_API_KEY) return [];
@@ -1913,7 +1967,7 @@ async function cyberFetchAbuseIpDb(limit) {
       if (t) { out.push(t); if (out.length >= limit) break; }
     }
     return out;
-  } catch { return []; }
+  } catch (e) { console.warn('[Cyber] AbuseIPDB fetch failed:', e?.message || e); return []; }
 }
 
 async function seedCyberThreats() {
@@ -2077,7 +2131,7 @@ async function seedPositiveEvents() {
     let anyQuerySucceeded = false;
 
     for (let i = 0; i < POSITIVE_QUERIES.length; i++) {
-      if (i > 0) await new Promise((r) => setTimeout(r, 500));
+      if (i > 0) await new Promise((r) => setTimeout(r, 5_500)); // GDELT rate limit: 1 req per 5s
       try {
         const events = await fetchGdeltGeoPositive(POSITIVE_QUERIES[i]);
         anyQuerySucceeded = true;
@@ -2099,7 +2153,8 @@ async function seedPositiveEvents() {
     const payload = { events: capped, fetchedAt: Date.now() };
     const ok1 = await upstashSet(POSITIVE_EVENTS_RPC_KEY, payload, POSITIVE_EVENTS_TTL);
     const ok2 = await upstashSet(POSITIVE_EVENTS_BOOTSTRAP_KEY, payload, POSITIVE_EVENTS_TTL);
-    console.log(`[PositiveEvents] Seeded ${capped.length} events (redis: ${ok1 && ok2 ? 'OK' : 'PARTIAL'}) in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+    const ok3 = await upstashSet('seed-meta:positive-events:geo', { fetchedAt: Date.now(), recordCount: capped.length }, 604800);
+    console.log(`[PositiveEvents] Seeded ${capped.length} events (redis: ${ok1 && ok2 && ok3 ? 'OK' : 'PARTIAL'}) in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
   } catch (e) {
     console.warn('[PositiveEvents] Seed error:', e?.message || e);
   } finally {
@@ -2117,6 +2172,266 @@ async function startPositiveEventsSeedLoop() {
   setInterval(() => {
     seedPositiveEvents().catch((e) => console.warn('[PositiveEvents] Seed error:', e?.message || e));
   }, POSITIVE_EVENTS_INTERVAL_MS).unref?.();
+}
+
+// ─────────────────────────────────────────────────────────────
+// AI Classification Seed — batch-classify digest titles via LLM → Redis
+// Clients get pre-classified items from digest, zero classify-event RPCs
+// ─────────────────────────────────────────────────────────────
+const CLASSIFY_SEED_INTERVAL_MS = 15 * 60 * 1000;
+const CLASSIFY_CACHE_TTL = 86400;
+const CLASSIFY_SKIP_TTL = 1800;
+const CLASSIFY_BATCH_SIZE = 50;
+const CLASSIFY_VARIANTS = ['full', 'tech', 'finance', 'happy', 'commodity'];
+const CLASSIFY_VARIANT_STAGGER_MS = 3 * 60 * 1000;
+
+const CLASSIFY_VALID_LEVELS = ['critical', 'high', 'medium', 'low', 'info'];
+const CLASSIFY_VALID_CATEGORIES = [
+  'conflict', 'protest', 'disaster', 'diplomatic', 'economic',
+  'terrorism', 'cyber', 'health', 'environmental', 'military',
+  'crime', 'infrastructure', 'tech', 'general',
+];
+
+const CLASSIFY_SYSTEM_PROMPT = `You classify news headlines by threat level and category. Return ONLY a JSON array, no other text.
+
+Levels: critical, high, medium, low, info
+Categories: conflict, protest, disaster, diplomatic, economic, terrorism, cyber, health, environmental, military, crime, infrastructure, tech, general
+
+Input: numbered lines "index|Title"
+Output: [{"i":0,"l":"high","c":"conflict"}, ...]
+
+Focus: geopolitical events, conflicts, disasters, diplomacy. Classify by real-world severity and impact.`;
+
+function classifyCacheKey(title) {
+  const hash = crypto.createHash('sha256').update(title.toLowerCase()).digest('hex').slice(0, 16);
+  return `classify:sebuf:v1:${hash}`;
+}
+
+function classifyFetchLlm(titles, apiKey, apiUrl, model) {
+  return new Promise((resolve) => {
+    const sanitized = titles.map((t) => t.replace(/[\n\r]/g, ' ').replace(/\|/g, '/').slice(0, 200).trim());
+    const prompt = sanitized.map((t, i) => `${i}|${t}`).join('\n');
+    const bodyStr = JSON.stringify({
+      model,
+      messages: [
+        { role: 'system', content: CLASSIFY_SYSTEM_PROMPT },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0,
+      max_tokens: titles.length * 40,
+    });
+
+    const parsed = new URL(apiUrl);
+    const transport = parsed.protocol === 'http:' ? http : https;
+    const req = transport.request(parsed, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'User-Agent': CHROME_UA,
+        'Content-Length': Buffer.byteLength(bodyStr),
+      },
+      timeout: 30000,
+    }, (resp) => {
+      if (resp.statusCode < 200 || resp.statusCode >= 300) {
+        resp.resume();
+        return resolve(null);
+      }
+      let data = '';
+      resp.on('data', (chunk) => { data += chunk; });
+      resp.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          const raw = json?.choices?.[0]?.message?.content?.trim();
+          if (!raw) return resolve(null);
+          const match = raw.match(/\[[\s\S]*\]/);
+          if (!match) return resolve(null);
+          resolve(JSON.parse(match[0]));
+        } catch { resolve(null); }
+      });
+    });
+    req.on('error', () => resolve(null));
+    req.on('timeout', () => { req.destroy(); resolve(null); });
+    req.end(bodyStr);
+  });
+}
+
+let classifyInFlight = false;
+
+async function seedClassifyForVariant(variant, apiKey, apiUrl, model) {
+  const digestUrl = `https://api.worldmonitor.app/api/news/v1/list-feed-digest?variant=${variant}&lang=en`;
+  let digest;
+  try {
+    const resp = await new Promise((resolve, reject) => {
+      const req = https.get(digestUrl, {
+        headers: { Accept: 'application/json', 'User-Agent': CHROME_UA },
+        timeout: 15000,
+      }, resolve);
+      req.on('error', reject);
+      req.on('timeout', () => { req.destroy(); reject(new Error('timeout')); });
+    });
+    if (resp.statusCode !== 200) { resp.resume(); return { total: 0, classified: 0, skipped: 0 }; }
+    const body = await new Promise((resolve) => {
+      let d = '';
+      resp.on('data', (c) => { d += c; });
+      resp.on('end', () => resolve(d));
+    });
+    digest = JSON.parse(body);
+  } catch {
+    return { total: 0, classified: 0, skipped: 0 };
+  }
+
+  const allTitles = new Set();
+  if (digest?.categories) {
+    for (const bucket of Object.values(digest.categories)) {
+      for (const item of bucket?.items ?? []) {
+        if (item?.title) allTitles.add(item.title);
+      }
+    }
+  }
+  if (allTitles.size === 0) return { total: 0, classified: 0, skipped: 0 };
+
+  const titleArr = [...allTitles];
+  const cacheKeys = titleArr.map((t) => classifyCacheKey(t));
+
+  const cached = await upstashMGet(cacheKeys);
+  const misses = [];
+  for (let i = 0; i < titleArr.length; i++) {
+    if (!cached[i]) misses.push(titleArr[i]);
+  }
+
+  if (misses.length === 0) return { total: titleArr.length, classified: 0, skipped: 0 };
+
+  let classified = 0;
+  let skipped = 0;
+
+  for (let b = 0; b < misses.length; b += CLASSIFY_BATCH_SIZE) {
+    const chunk = misses.slice(b, b + CLASSIFY_BATCH_SIZE);
+    const llmResult = await classifyFetchLlm(chunk, apiKey, apiUrl, model);
+
+    if (!Array.isArray(llmResult)) {
+      for (const title of chunk) {
+        await upstashSet(classifyCacheKey(title), { level: '_skip', timestamp: Date.now() }, CLASSIFY_SKIP_TTL);
+        skipped++;
+      }
+      continue;
+    }
+
+    const classifiedSet = new Set();
+    for (const entry of llmResult) {
+      const idx = entry?.i;
+      if (typeof idx !== 'number' || idx < 0 || idx >= chunk.length) continue;
+      if (classifiedSet.has(idx)) continue;
+      const level = CLASSIFY_VALID_LEVELS.includes(entry?.l) ? entry.l : null;
+      const category = CLASSIFY_VALID_CATEGORIES.includes(entry?.c) ? entry.c : null;
+      if (!level || !category) continue;
+      classifiedSet.add(idx);
+      await upstashSet(classifyCacheKey(chunk[idx]), { level, category, timestamp: Date.now() }, CLASSIFY_CACHE_TTL);
+      classified++;
+    }
+
+    for (let i = 0; i < chunk.length; i++) {
+      if (!classifiedSet.has(i)) {
+        await upstashSet(classifyCacheKey(chunk[i]), { level: '_skip', timestamp: Date.now() }, CLASSIFY_SKIP_TTL);
+        skipped++;
+      }
+    }
+  }
+
+  return { total: titleArr.length, classified, skipped };
+}
+
+async function seedClassify() {
+  if (classifyInFlight) return;
+  classifyInFlight = true;
+  const t0 = Date.now();
+  try {
+    const apiKey = process.env.LLM_API_KEY || process.env.GROQ_API_KEY;
+    const apiUrl = process.env.LLM_API_URL || 'https://api.groq.com/openai/v1/chat/completions';
+    const model = process.env.LLM_MODEL || 'llama-3.1-8b-instant';
+    if (!apiKey) {
+      console.log('[Classify] Skipped — no LLM_API_KEY or GROQ_API_KEY');
+      return;
+    }
+    const isProd = process.env.RAILWAY_ENVIRONMENT === 'production';
+    if (isProd && !apiUrl.startsWith('https://') && !apiUrl.startsWith('http://localhost')) {
+      console.warn('[Classify] LLM_API_URL must be HTTPS in production — skipping');
+      return;
+    }
+
+    let totalClassified = 0;
+    let totalSkipped = 0;
+    for (let v = 0; v < CLASSIFY_VARIANTS.length; v++) {
+      if (v > 0) await new Promise((r) => setTimeout(r, CLASSIFY_VARIANT_STAGGER_MS));
+      try {
+        const stats = await seedClassifyForVariant(CLASSIFY_VARIANTS[v], apiKey, apiUrl, model);
+        totalClassified += stats.classified;
+        totalSkipped += stats.skipped;
+        console.log(`[Classify] ${CLASSIFY_VARIANTS[v]}: ${stats.total} titles, ${stats.classified} classified, ${stats.skipped} skipped`);
+      } catch (e) {
+        console.warn(`[Classify] ${CLASSIFY_VARIANTS[v]} error:`, e?.message || e);
+      }
+    }
+
+    await upstashSet('seed-meta:classify', { fetchedAt: Date.now(), recordCount: totalClassified }, 604800);
+    console.log(`[Classify] Done in ${((Date.now() - t0) / 1000).toFixed(1)}s — ${totalClassified} classified, ${totalSkipped} skipped`);
+  } catch (e) {
+    console.warn('[Classify] Seed error:', e?.message || e);
+  } finally {
+    classifyInFlight = false;
+  }
+}
+
+async function startClassifySeedLoop() {
+  if (!UPSTASH_ENABLED) {
+    console.log('[Classify] Disabled (no Upstash Redis)');
+    return;
+  }
+  const apiKey = process.env.LLM_API_KEY || process.env.GROQ_API_KEY;
+  console.log(`[Classify] Seed loop starting (interval ${CLASSIFY_SEED_INTERVAL_MS / 1000 / 60}min, apiKey:${apiKey ? 'yes' : 'no'})`);
+  seedClassify().catch((e) => console.warn('[Classify] Initial seed error:', e?.message || e));
+  setInterval(() => {
+    seedClassify().catch((e) => console.warn('[Classify] Seed error:', e?.message || e));
+  }, CLASSIFY_SEED_INTERVAL_MS).unref?.();
+}
+
+// ─────────────────────────────────────────────────────────────
+// Service Statuses Seed — warm-pings Vercel RPC every 15 min
+// so service statuses are always cached (TTL is 30 min).
+// ─────────────────────────────────────────────────────────────
+const SERVICE_STATUSES_SEED_INTERVAL_MS = 15 * 60 * 1000; // 15 min (TTL/2)
+const SERVICE_STATUSES_RPC_URL = 'https://worldmonitor.app/api/infrastructure/v1/list-service-statuses';
+
+async function seedServiceStatuses() {
+  try {
+    const resp = await fetch(SERVICE_STATUSES_RPC_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': CHROME_UA,
+        Origin: 'https://worldmonitor.app',
+      },
+      body: '{}',
+      signal: AbortSignal.timeout(60_000),
+    });
+    if (!resp.ok) {
+      console.warn(`[ServiceStatuses] Seed ping failed: HTTP ${resp.status}`);
+      return;
+    }
+    const data = await resp.json();
+    const count = data?.statuses?.length || 0;
+    console.log(`[ServiceStatuses] Seed ping OK — ${count} statuses`);
+  } catch (e) {
+    console.warn('[ServiceStatuses] Seed ping error:', e?.message || e);
+  }
+}
+
+function startServiceStatusesSeedLoop() {
+  console.log(`[ServiceStatuses] Seed loop starting (interval ${SERVICE_STATUSES_SEED_INTERVAL_MS / 1000 / 60}min)`);
+  seedServiceStatuses().catch((e) => console.warn('[ServiceStatuses] Initial seed error:', e?.message || e));
+  setInterval(() => {
+    seedServiceStatuses().catch((e) => console.warn('[ServiceStatuses] Seed error:', e?.message || e));
+  }, SERVICE_STATUSES_SEED_INTERVAL_MS).unref?.();
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -2641,6 +2956,7 @@ async function seedCiiScores() {
     if (ok1) {
       await upstashSet(CII_STALE_KEY, payload, CII_STALE_TTL);
     }
+    await upstashSet('seed-meta:risk:scores', { fetchedAt: Date.now(), recordCount: ciiScores.length }, 604800);
     const topEntry = ciiScores[0];
     console.log(`[CII] Seeded ${ciiScores.length} scores (top: ${topEntry?.region}=${topEntry?.combinedScore}, acled:${Array.isArray(acled) ? acled.length : 0} redis:${ok1 ? 'OK' : 'FAIL'}) in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
   } catch (e) {
@@ -5485,6 +5801,8 @@ server.listen(PORT, () => {
   // (avoids burning 12 extra AbuseIPDB calls/day from duplicate relay loop)
   startCiiSeedLoop();
   startPositiveEventsSeedLoop();
+  startClassifySeedLoop();
+  startServiceStatusesSeedLoop();
   startTheaterPostureSeedLoop();
   startGpsJamSeedLoop();
 });

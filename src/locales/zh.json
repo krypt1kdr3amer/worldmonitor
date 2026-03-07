@@ -6,6 +6,9 @@
   "countryBrief": {
     "identifying": "正在识别国家...",
     "locating": "正在定位区域...",
+    "geocodeFailed": "无法识别此位置的国家",
+    "retryBtn": "重试",
+    "closeBtn": "关闭",
     "limitedCoverage": "覆盖范围有限",
     "instabilityIndex": "不稳定指数",
     "notTracked": "未跟踪 — {{country}}不在CII一级监控名单中",
@@ -970,6 +973,10 @@
         "ciiCritical": "危急 (81–100)"
       },
       "layerGuide": "图层指南",
+      "layerWarningTitle": "性能提示",
+      "layerWarningBody": "启用超过 {{threshold}} 个图层可能会影响渲染性能和帧率。",
+      "layerWarningDismiss": "不再显示",
+      "layerWarningOk": "知道了",
       "layersTitle": "图层",
       "timeAll": "全部",
       "views": {

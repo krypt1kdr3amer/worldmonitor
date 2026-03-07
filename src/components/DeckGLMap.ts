@@ -39,7 +39,7 @@ import type {
 import { fetchMilitaryBases, type MilitaryBaseCluster as ServerBaseCluster } from '@/services/military-bases';
 import type { AirportDelayAlert, PositionSample } from '@/services/aviation';
 import { fetchAircraftPositions } from '@/services/aviation';
-import type { IranEvent } from '@/services/conflict';
+import { type IranEvent, getIranEventColor, getIranEventRadius } from '@/services/conflict';
 import type { GpsJamHex } from '@/services/gps-interference';
 import type { DisplacementFlow } from '@/services/displacement';
 import type { Earthquake } from '@/services/earthquakes';
@@ -88,6 +88,7 @@ import {
 import type { GulfInvestment } from '@/types';
 import { resolveTradeRouteSegments, TRADE_ROUTES as TRADE_ROUTES_LIST, type TradeRouteSegment } from '@/config/trade-routes';
 import { getLayersForVariant, resolveLayerLabel, type MapVariant } from '@/config/map-layer-definitions';
+import { getSecretState } from '@/services/runtime-config';
 import { MapPopup, type PopupType } from './MapPopup';
 import {
   updateHotspotEscalation,
@@ -355,7 +356,7 @@ export class DeckGLMap {
     nuclear: new Set(),
   };
 
-  private renderScheduled = false;
+  private renderRafId: number | null = null;
   private renderPaused = false;
   private renderPending = false;
   private webglLost = false;
@@ -1862,12 +1863,8 @@ export class DeckGLMap {
       id: 'iran-events-layer',
       data: this.iranEvents,
       getPosition: (d: IranEvent) => [d.longitude, d.latitude],
-      getRadius: (d: IranEvent) => (d.severity === 'high' || d.severity === 'critical') ? 20000 : d.severity === 'medium' ? 15000 : 10000,
-      getFillColor: (d: IranEvent) => {
-        if (d.severity === 'critical' || d.category === 'military') return [255, 50, 50, 220] as [number, number, number, number];
-        if (d.category === 'politics' || d.category === 'diplomacy') return [255, 165, 0, 200] as [number, number, number, number];
-        return [255, 255, 0, 180] as [number, number, number, number];
-      },
+      getRadius: (d: IranEvent) => getIranEventRadius(d.severity),
+      getFillColor: (d: IranEvent) => getIranEventColor(d),
       radiusMinPixels: 4,
       radiusMaxPixels: 16,
       pickable: true,
@@ -3537,10 +3534,12 @@ export class DeckGLMap {
     toggles.className = 'layer-toggles deckgl-layer-toggles';
 
     const layerDefs = getLayersForVariant((SITE_VARIANT || 'full') as MapVariant, 'flat');
+    const _wmKey = getSecretState('WORLDMONITOR_API_KEY').present;
     const layerConfig = layerDefs.map(def => ({
       key: def.key,
       label: resolveLayerLabel(def, t),
       icon: def.icon,
+      premium: def.premium,
     }));
 
     toggles.innerHTML = `
@@ -3550,13 +3549,16 @@ export class DeckGLMap {
         <button class="toggle-collapse">&#9660;</button>
       </div>
       <div class="toggle-list" style="max-height: 32vh; overflow-y: auto; scrollbar-width: thin;">
-        ${layerConfig.map(({ key, label, icon }) => `
-          <label class="layer-toggle" data-layer="${key}">
-            <input type="checkbox" ${this.state.layers[key as keyof MapLayers] ? 'checked' : ''}>
+        ${layerConfig.map(({ key, label, icon, premium }) => {
+          const isLocked = premium === 'locked' && !_wmKey;
+          const isEnhanced = premium === 'enhanced' && !_wmKey;
+          return `
+          <label class="layer-toggle${isLocked ? ' layer-toggle-locked' : ''}" data-layer="${key}">
+            <input type="checkbox" ${this.state.layers[key as keyof MapLayers] ? 'checked' : ''}${isLocked ? ' disabled' : ''}>
             <span class="toggle-icon">${icon}</span>
-            <span class="toggle-label">${label}</span>
-          </label>
-        `).join('')}
+            <span class="toggle-label">${label}${isLocked ? ' \uD83D\uDD12' : ''}${isEnhanced ? ' <span class="layer-pro-badge">PRO</span>' : ''}</span>
+          </label>`;
+        }).join('')}
       </div>
     `;
 
@@ -3850,11 +3852,11 @@ export class DeckGLMap {
       this.renderPending = true;
       return;
     }
-    if (this.renderScheduled) return;
-    this.renderScheduled = true;
-
-    requestAnimationFrame(() => {
-      this.renderScheduled = false;
+    if (this.renderRafId !== null) {
+      cancelAnimationFrame(this.renderRafId);
+    }
+    this.renderRafId = requestAnimationFrame(() => {
+      this.renderRafId = null;
       this.updateLayers();
     });
   }
@@ -3863,6 +3865,11 @@ export class DeckGLMap {
     if (this.renderPaused === paused) return;
     this.renderPaused = paused;
     if (paused) {
+      if (this.renderRafId !== null) {
+        cancelAnimationFrame(this.renderRafId);
+        this.renderRafId = null;
+        this.renderPending = true;
+      }
       this.stopPulseAnimation();
       this.stopDayNightTimer();
       return;
@@ -4580,7 +4587,7 @@ export class DeckGLMap {
   private layerWarningShown = false;
 
   private enforceLayerLimit(): void {
-    const WARN_THRESHOLD = 9;
+    const WARN_THRESHOLD = 10;
     const togglesEl = this.container.querySelector('.deckgl-layer-toggles');
     if (!togglesEl) return;
     const activeCount = Array.from(togglesEl.querySelectorAll<HTMLInputElement>('.layer-toggle input'))
@@ -5052,6 +5059,11 @@ export class DeckGLMap {
     this.debouncedFetchBases.cancel();
     this.debouncedFetchAircraft.cancel();
     this.rafUpdateLayers.cancel();
+
+    if (this.renderRafId !== null) {
+      cancelAnimationFrame(this.renderRafId);
+      this.renderRafId = null;
+    }
 
     if (this.moveTimeoutId) {
       clearTimeout(this.moveTimeoutId);

@@ -6,6 +6,9 @@
   "countryBrief": {
     "identifying": "Identifikuji zemi...",
     "locating": "Lokalizuji region...",
+    "geocodeFailed": "Nepodařilo se identifikovat zemi na tomto místě",
+    "retryBtn": "Zkusit znovu",
+    "closeBtn": "Zavřít",
     "limitedCoverage": "Omezené pokrytí",
     "instabilityIndex": "Index nestability",
     "notTracked": "Nesledováno — {{country}} není v seznamu CII tier-1",
@@ -960,6 +963,10 @@
         "ciiCritical": "Kritický (81–100)"
       },
       "layerGuide": "Průvodce vrstvami",
+      "layerWarningTitle": "Upozornění na výkon",
+      "layerWarningBody": "Povolení více než {{threshold}} vrstev může ovlivnit výkon vykreslování a snímkovou frekvenci.",
+      "layerWarningDismiss": "Příště nezobrazovat",
+      "layerWarningOk": "Rozumím",
       "layersTitle": "Vrstvy",
       "timeAll": "Vše",
       "views": {

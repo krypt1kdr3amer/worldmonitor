@@ -304,6 +304,9 @@
     "countryIntel": {
       "identifying": "Identificando país...",
       "locating": "Localizando região...",
+      "geocodeFailed": "Não foi possível identificar um país nesta localização",
+      "retryBtn": "Tentar novamente",
+      "closeBtn": "Fechar",
       "instabilityIndex": "Índice de Instabilidade",
       "protests": "protestos",
       "militaryAircraft": "mil. aeronave",
@@ -579,6 +582,10 @@
       },
       "layersTitle": "Camadas",
       "layerGuide": "Guia de camadas",
+      "layerWarningTitle": "Aviso de desempenho",
+      "layerWarningBody": "Ativar mais de {{threshold}} camadas pode afetar o desempenho de renderização e a taxa de quadros.",
+      "layerWarningDismiss": "Não mostrar novamente",
+      "layerWarningOk": "Entendi",
       "tooltip": {
         "earthquake": "Terremoto",
         "militaryAircraft": "Aeronave Militar",

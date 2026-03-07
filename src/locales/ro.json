@@ -6,6 +6,9 @@
   "countryBrief": {
     "identifying": "Se identifică țara...",
     "locating": "Se localizează regiunea...",
+    "geocodeFailed": "Nu s-a putut identifica o țară la această locație",
+    "retryBtn": "Reîncearcă",
+    "closeBtn": "Închide",
     "limitedCoverage": "Acoperire limitată",
     "instabilityIndex": "Indicele de instabilitate",
     "notTracked": "Nu este urmărită — {{country}} nu se află în lista CII de nivel 1",
@@ -970,6 +973,10 @@
         "ciiCritical": "Critic (81–100)"
       },
       "layerGuide": "Ghid de straturi",
+      "layerWarningTitle": "Notificare de performanță",
+      "layerWarningBody": "Activarea a mai mult de {{threshold}} straturi poate afecta performanța de randare și rata de cadre.",
+      "layerWarningDismiss": "Nu mai afișa",
+      "layerWarningOk": "Am înțeles",
       "layersTitle": "Straturi",
       "timeAll": "Toate",
       "views": {

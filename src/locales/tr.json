@@ -6,6 +6,9 @@
   "countryBrief": {
     "identifying": "Ulke belirleniyor...",
     "locating": "Bolge tespit ediliyor...",
+    "geocodeFailed": "Bu konumda bir ülke belirlenemedi",
+    "retryBtn": "Tekrar dene",
+    "closeBtn": "Kapat",
     "limitedCoverage": "Sinirli kapsam",
     "instabilityIndex": "Istikrarsizlik Endeksi",
     "notTracked": "Takip edilmiyor — {{country}} CII seviye-1 listesinde degil",
@@ -970,6 +973,10 @@
         "ciiCritical": "Kritik (81–100)"
       },
       "layerGuide": "Katman Rehberi",
+      "layerWarningTitle": "Performans bildirimi",
+      "layerWarningBody": "{{threshold}} adetten fazla katmanı etkinleştirmek, işleme performansını ve kare hızını etkileyebilir.",
+      "layerWarningDismiss": "Bir daha gösterme",
+      "layerWarningOk": "Anladım",
       "layersTitle": "Katmanlar",
       "timeAll": "Tumu",
       "views": {
