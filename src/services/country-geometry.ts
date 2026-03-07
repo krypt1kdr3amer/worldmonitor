@@ -12,7 +12,7 @@ interface CountryHit {
   name: string;
 }
 
-const COUNTRY_GEOJSON_URL = '/data/countries.geojson';
+const COUNTRY_GEOJSON_URL = 'https://maps.worldmonitor.app/countries.geojson';
 
 const POLITICAL_OVERRIDES: Record<string, string> = { 'CN-TW': 'TW' };
 
