@@ -55,10 +55,12 @@ function redisCmd(cmd: string[]): { url: string; token: string; body: string } |
   return { url, token, body: JSON.stringify(cmd) };
 }
 
-const lockOwner = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+function makeLockOwner(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
 
-async function tryAcquireLock(): Promise<boolean> {
-  const r = redisCmd(['SET', BASELINE_LOCK_KEY, lockOwner, 'NX', 'EX', String(BASELINE_LOCK_TTL)]);
+async function tryAcquireLock(owner: string): Promise<boolean> {
+  const r = redisCmd(['SET', BASELINE_LOCK_KEY, owner, 'NX', 'EX', String(BASELINE_LOCK_TTL)]);
   if (!r) return false;
   try {
     const resp = await fetch(r.url, {
@@ -75,7 +77,7 @@ async function tryAcquireLock(): Promise<boolean> {
   }
 }
 
-async function releaseLock(): Promise<void> {
+async function releaseLock(owner: string): Promise<void> {
   const r = redisCmd(['GET', BASELINE_LOCK_KEY]);
   if (!r) return;
   try {
@@ -87,7 +89,7 @@ async function releaseLock(): Promise<void> {
     });
     if (!resp.ok) return;
     const data = (await resp.json()) as { result?: string | null };
-    if (data.result !== lockOwner) return;
+    if (data.result !== owner) return;
     const del = redisCmd(['DEL', BASELINE_LOCK_KEY]);
     if (!del) return;
     await fetch(del.url, {
@@ -112,7 +114,8 @@ export async function listTemporalAnomalies(
       }
     }
 
-    const lockAcquired = await tryAcquireLock();
+    const owner = makeLockOwner();
+    const lockAcquired = await tryAcquireLock(owner);
     if (!lockAcquired) {
       if (cached) return cached;
       return { anomalies: [], trackedTypes: [], computedAt: '' };
@@ -210,7 +213,7 @@ export async function listTemporalAnomalies(
       await setCachedJson(TEMPORAL_ANOMALIES_KEY, snapshot, TEMPORAL_ANOMALIES_TTL);
       return snapshot;
     } finally {
-      await releaseLock();
+      await releaseLock(owner);
     }
   } catch {
     return { anomalies: [], trackedTypes: [], computedAt: '' };

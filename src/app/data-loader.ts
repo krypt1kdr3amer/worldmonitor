@@ -414,11 +414,13 @@ export class DataLoaderManager implements AppModule {
 
     this.updateSearchIndex();
 
-    const { anomalies, trackedTypes } = consumeServerAnomalies();
-    if (anomalies.length > 0 || trackedTypes.length > 0) {
-      signalAggregator.ingestTemporalAnomalies(anomalies, trackedTypes);
-      ingestTemporalAnomaliesForCII(anomalies);
+    const bootstrapTemporal = consumeServerAnomalies();
+    if (bootstrapTemporal.anomalies.length > 0 || bootstrapTemporal.trackedTypes.length > 0) {
+      signalAggregator.ingestTemporalAnomalies(bootstrapTemporal.anomalies, bootstrapTemporal.trackedTypes);
+      ingestTemporalAnomaliesForCII(bootstrapTemporal.anomalies);
       this.refreshCiiAndBrief();
+    } else {
+      this.refreshTemporalBaseline().catch(() => {});
     }
   }
 
