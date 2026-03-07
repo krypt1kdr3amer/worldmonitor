@@ -7,7 +7,8 @@ import {
   BarChart3, Clock, Radio, Ship, Plane, Flame,
   Cable, Wifi, MapPin, Users, TrendingUp,
   Filter, Lightbulb, SlidersHorizontal, Telescope,
-  Newspaper, LineChart, Search, Shield, Building2
+  LineChart, Search, Shield, Building2,
+  Landmark, Fuel
 } from 'lucide-react';
 import { t } from './i18n';
 
@@ -32,7 +33,7 @@ export function renderTurnstileWidgets(): number {
     const widgetId = window.turnstile!.render(el, {
       sitekey: TURNSTILE_SITE_KEY,
       theme: 'dark',
-      size: 'compact',
+      size: 'invisible',
       callback: (token: string) => { el.dataset.token = token; },
       'expired-callback': () => { delete el.dataset.token; },
       'error-callback': () => { delete el.dataset.token; },
@@ -178,7 +179,7 @@ const Navbar = () => (
         <a href="#enterprise" className="hover:text-wm-text transition-colors">{t('nav.enterprise')}</a>
       </div>
       <a href="#waitlist" className="bg-wm-green text-wm-bg px-4 py-2 rounded-sm font-mono text-xs uppercase tracking-wider font-bold hover:bg-green-400 transition-colors">
-        {t('nav.joinWaitlist')}
+        {t('nav.reserveAccess')}
       </a>
     </div>
   </nav>
@@ -231,13 +232,13 @@ const Hero = () => (
               aria-label={t('hero.emailAriaLabel')}
             />
             <button type="submit" className="bg-wm-green text-wm-bg px-6 py-3 rounded-sm font-mono text-sm uppercase tracking-wider font-bold hover:bg-green-400 transition-colors flex items-center justify-center gap-2 whitespace-nowrap">
-              {t('hero.joinProWaitlist')} <ArrowRight className="w-4 h-4" aria-hidden="true" />
+              {t('hero.reserveEarlyAccess')} <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
-          <div className="cf-turnstile mx-auto" />
+          <div className="cf-turnstile mx-auto" data-size="invisible" />
         </form>
         <div className="flex items-center justify-center gap-4 mt-4">
-          <p className="text-xs text-wm-muted font-mono">{t('hero.launchingSoon')}</p>
+          <p className="text-xs text-wm-muted font-mono">{t('hero.launchingDate')}</p>
           <span className="text-wm-border">|</span>
           <a href="https://worldmonitor.app" className="text-xs text-wm-green font-mono hover:text-green-300 transition-colors flex items-center gap-1">
             {t('hero.tryFreeDashboard')} <ArrowRight className="w-3 h-3" aria-hidden="true" />
@@ -315,7 +316,7 @@ const TwoPathSplit = () => (
             </li>
           ))}
         </ul>
-        <a href="mailto:enterprise@worldmonitor.app" className="block text-center py-2.5 rounded-sm font-mono text-xs uppercase tracking-wider font-bold border border-wm-border text-wm-muted hover:text-wm-text hover:border-wm-text transition-colors">
+        <a href="#enterprise-contact" className="block text-center py-2.5 rounded-sm font-mono text-xs uppercase tracking-wider font-bold border border-wm-border text-wm-muted hover:text-wm-text hover:border-wm-text transition-colors">
           {t('twoPath.entCta')}
         </a>
       </div>
@@ -542,10 +543,11 @@ const ProShowcase = () => (
 /* ─── 8. Audience Personas (new — from draft) ─── */
 const AudiencePersonas = () => {
   const personas = [
-    { icon: <Newspaper className="w-6 h-6" aria-hidden="true" />, title: t('audience.journalistsTitle'), desc: t('audience.journalistsDesc') },
     { icon: <LineChart className="w-6 h-6" aria-hidden="true" />, title: t('audience.investorsTitle'), desc: t('audience.investorsDesc') },
     { icon: <Search className="w-6 h-6" aria-hidden="true" />, title: t('audience.researchersTitle'), desc: t('audience.researchersDesc') },
     { icon: <Shield className="w-6 h-6" aria-hidden="true" />, title: t('audience.securityTitle'), desc: t('audience.securityDesc') },
+    { icon: <Landmark className="w-6 h-6" aria-hidden="true" />, title: t('audience.govTitle'), desc: t('audience.govDesc') },
+    { icon: <Fuel className="w-6 h-6" aria-hidden="true" />, title: t('audience.tradersTitle'), desc: t('audience.tradersDesc') },
     { icon: <Building2 className="w-6 h-6" aria-hidden="true" />, title: t('audience.teamsTitle'), desc: t('audience.teamsDesc') },
   ];
 
@@ -710,13 +712,55 @@ const EnterpriseShowcase = () => (
         </div>
       </div>
 
-      <div className="text-center">
-        <a
-          href="mailto:enterprise@worldmonitor.app"
-          className="inline-flex items-center gap-2 bg-wm-card border border-wm-border px-8 py-3 rounded-sm font-mono text-sm uppercase tracking-wider font-bold text-wm-muted hover:text-wm-text hover:border-wm-text transition-colors"
-        >
-          {t('enterpriseShowcase.talkToSales')} <ArrowRight className="w-4 h-4" aria-hidden="true" />
-        </a>
+      <div className="max-w-lg mx-auto mt-16 bg-wm-card border border-wm-border p-8" id="enterprise-contact">
+        <h3 className="font-display text-xl font-bold mb-2 text-center">{t('enterpriseShowcase.contactFormTitle')}</h3>
+        <p className="text-sm text-wm-muted mb-6 text-center">{t('enterpriseShowcase.contactFormSubtitle')}</p>
+        <form className="space-y-4" onSubmit={async (e) => {
+          e.preventDefault();
+          const form = e.currentTarget;
+          const btn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+          const origText = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = t('enterpriseShowcase.contactSending');
+          const fd = new FormData(form);
+          const honeypot = (form.querySelector('input[name="website"]') as HTMLInputElement)?.value || '';
+          const turnstileWidget = form.querySelector('.cf-turnstile') as HTMLElement | null;
+          const turnstileToken = turnstileWidget?.dataset.token || '';
+          try {
+            const res = await fetch(`${API_BASE}/register-interest`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email: fd.get('email'),
+                name: fd.get('name'),
+                organization: fd.get('organization'),
+                message: fd.get('message'),
+                source: 'enterprise-contact',
+                website: honeypot,
+                turnstileToken,
+              }),
+            });
+            if (!res.ok) throw new Error();
+            btn.textContent = t('enterpriseShowcase.contactSent');
+            btn.className = btn.className.replace('bg-wm-green', 'bg-wm-card border border-wm-green text-wm-green');
+          } catch {
+            btn.textContent = t('enterpriseShowcase.contactFailed');
+            btn.disabled = false;
+            setTimeout(() => { btn.textContent = origText; }, 4000);
+          }
+        }}>
+          <input type="text" name="website" autoComplete="off" tabIndex={-1} aria-hidden="true" className="absolute opacity-0 h-0 w-0 pointer-events-none" />
+          <div className="grid grid-cols-2 gap-4">
+            <input type="text" name="name" placeholder={t('enterpriseShowcase.namePlaceholder')} required className="bg-wm-bg border border-wm-border rounded-sm px-4 py-3 text-sm focus:outline-none focus:border-wm-green transition-colors font-mono" />
+            <input type="email" name="email" placeholder={t('enterpriseShowcase.emailPlaceholder')} required className="bg-wm-bg border border-wm-border rounded-sm px-4 py-3 text-sm focus:outline-none focus:border-wm-green transition-colors font-mono" />
+          </div>
+          <input type="text" name="organization" placeholder={t('enterpriseShowcase.orgPlaceholder')} className="w-full bg-wm-bg border border-wm-border rounded-sm px-4 py-3 text-sm focus:outline-none focus:border-wm-green transition-colors font-mono" />
+          <textarea name="message" placeholder={t('enterpriseShowcase.messagePlaceholder')} rows={3} className="w-full bg-wm-bg border border-wm-border rounded-sm px-4 py-3 text-sm focus:outline-none focus:border-wm-green transition-colors font-mono resize-none" />
+          <div className="cf-turnstile mx-auto" data-size="invisible" />
+          <button type="submit" className="w-full bg-wm-green text-wm-bg py-3 rounded-sm font-mono text-sm uppercase tracking-wider font-bold hover:bg-green-400 transition-colors">
+            {t('enterpriseShowcase.submitContact')}
+          </button>
+        </form>
       </div>
     </div>
   </section>
@@ -836,11 +880,11 @@ const Footer = () => (
             {t('finalCta.getPro')}
           </button>
         </div>
-        <div className="cf-turnstile mx-auto" />
+        <div className="cf-turnstile mx-auto" data-size="invisible" />
       </form>
 
       <a
-        href="mailto:enterprise@worldmonitor.app"
+        href="#enterprise-contact"
         className="inline-flex items-center gap-2 text-sm text-wm-muted hover:text-wm-text transition-colors font-mono"
       >
         {t('finalCta.talkToSales')} <ArrowRight className="w-3 h-3" aria-hidden="true" />
@@ -872,7 +916,9 @@ export default function App() {
         <SocialProof />
         {/* 3. Two-path split */}
         <TwoPathSplit />
-        {/* 4. Why upgrade */}
+        {/* 4. Audience personas */}
+        <AudiencePersonas />
+        {/* 5. Why upgrade */}
         <WhyUpgrade />
         {/* 5. Live dashboard embed */}
         <LivePreview />
@@ -880,8 +926,6 @@ export default function App() {
         <SourceMarquee />
         {/* 7. Pro showcase + Slack mock */}
         <ProShowcase />
-        {/* 8. Audience personas */}
-        <AudiencePersonas />
         {/* 9. API section */}
         <ApiSection />
         {/* 10. Enterprise section */}

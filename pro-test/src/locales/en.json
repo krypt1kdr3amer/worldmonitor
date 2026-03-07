@@ -4,15 +4,15 @@
     "pro": "Pro",
     "api": "API",
     "enterprise": "Enterprise",
-    "joinWaitlist": "Join Waitlist"
+    "reserveAccess": "Reserve Your Early Access"
   },
   "hero": {
     "title1": "Real-time intelligence",
     "title2": "for serious users and organizations.",
-    "subtitle": "Track global events with deeper layers, AI briefings, custom alerts, saved workflows, and enterprise-ready access.",
+    "subtitle": "Understand global events faster. What matters and why. Get AI briefings, custom alerts, and deeper monitoring.",
     "missionLine": "The core platform stays free. Pro unlocks advanced tools. Enterprise supports teams, deployments, and integrations.",
-    "joinProWaitlist": "Join Pro Waitlist",
-    "launchingSoon": "Launching soon",
+    "reserveEarlyAccess": "Reserve Your Early Access",
+    "launchingDate": "Launching March 2026",
     "tryFreeDashboard": "Try the free dashboard",
     "emailPlaceholder": "Enter your email",
     "emailAriaLabel": "Email address for waitlist"
@@ -29,7 +29,7 @@
     "proF4": "Premium layers",
     "proF5": "Longer history",
     "proF6": "Desktop workflows",
-    "proCta": "Start Pro",
+    "proCta": "Reserve Your Early Access",
     "entTitle": "World Monitor Enterprise",
     "entDesc": "For teams that need shared monitoring, API access, deployment options, and direct support.",
     "entF1": "Team workspaces",
@@ -76,6 +76,10 @@
     "researchersDesc": "Use saved views, alerts, deeper filters, and longer history for ongoing monitoring.",
     "securityTitle": "Security-minded individuals",
     "securityDesc": "Follow specific countries, routes, hotspots, and event types with more control.",
+    "govTitle": "Government & defense",
+    "govDesc": "Situational awareness across geopolitical, infrastructure, and cyber signals for national security operations.",
+    "tradersTitle": "Energy & commodities traders",
+    "tradersDesc": "Track vessel movements, cargo inference, supply chain disruptions, and market-moving geopolitical signals.",
     "teamsTitle": "Teams & organizations",
     "teamsDesc": "Move from individual use to shared workflows, API access, and managed deployments."
   },
@@ -196,7 +200,17 @@
     "riskDesc": "Scenario simulation, investor personas, branded PDF/PowerPoint reports on demand.",
     "soc": "SOCs & CERT",
     "socDesc": "Cyber threat layer, SIEM integration, BGP anomaly monitoring, ransomware feeds.",
-    "talkToSales": "Talk to Sales"
+    "talkToSales": "Talk to Sales",
+    "contactFormTitle": "Talk to our team",
+    "contactFormSubtitle": "Tell us about your organization and we'll get back to you within one business day.",
+    "namePlaceholder": "Your name",
+    "emailPlaceholder": "Work email",
+    "orgPlaceholder": "Organization",
+    "messagePlaceholder": "What are you looking for?",
+    "submitContact": "Send Message",
+    "contactSending": "Sending...",
+    "contactSent": "Message sent. We'll be in touch.",
+    "contactFailed": "Failed to send. Please email enterprise@worldmonitor.app"
   },
   "pricingTable": {
     "title": "Compare Tiers",
@@ -265,7 +279,7 @@
   "finalCta": {
     "title": "Start with Pro. Scale to Enterprise.",
     "subtitle": "Keep using World Monitor for free, or upgrade for deeper tools and workflows. If your organization needs team access, deployment options, or API support, talk to us.",
-    "getPro": "Get Pro",
+    "getPro": "Reserve Your Early Access",
     "talkToSales": "Talk to Sales"
   },
   "footer": {
@@ -276,7 +290,7 @@
   },
   "form": {
     "submitting": "Submitting...",
-    "joinWaitlist": "Join Waitlist",
+    "joinWaitlist": "Reserve Your Early Access",
     "tooManyRequests": "Too many requests",
     "failedTryAgain": "Failed \u2014 try again"
   },
