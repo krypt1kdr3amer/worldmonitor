@@ -17,7 +17,8 @@ initI18n().then(() => {
   let initialized = false;
   const initWidgets = () => {
     if (initialized || !window.turnstile) return false;
-    renderTurnstileWidgets();
+    const rendered = renderTurnstileWidgets();
+    if (rendered === 0) return false;
     initialized = true;
     return true;
   };
@@ -28,8 +29,9 @@ initI18n().then(() => {
   }, { once: true });
 
   if (!initWidgets()) {
+    let attempts = 0;
     const retryInterval = window.setInterval(() => {
-      if (initWidgets()) window.clearInterval(retryInterval);
+      if (initWidgets() || ++attempts >= 20) window.clearInterval(retryInterval);
     }, 500);
   }
 });

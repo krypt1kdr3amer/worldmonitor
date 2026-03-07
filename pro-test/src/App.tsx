@@ -23,8 +23,9 @@ declare global {
   }
 }
 
-export function renderTurnstileWidgets() {
-  if (!window.turnstile) return;
+export function renderTurnstileWidgets(): number {
+  if (!window.turnstile) return 0;
+  let count = 0;
   document.querySelectorAll<HTMLElement>('.cf-turnstile:not([data-rendered])').forEach(el => {
     const widgetId = window.turnstile!.render(el, {
       sitekey: TURNSTILE_SITE_KEY,
@@ -36,7 +37,9 @@ export function renderTurnstileWidgets() {
     });
     el.dataset.rendered = 'true';
     el.dataset.widgetId = String(widgetId);
+    count++;
   });
+  return count;
 }
 
 function getRefCode(): string | undefined {
